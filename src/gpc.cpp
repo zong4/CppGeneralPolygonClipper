@@ -74,7 +74,8 @@ namespace gpc {
 #define NEXT_INDEX(i, n) ((i + 1) % n)
 
 bool OPTIMAL(gpc_vertex_list const &v, int i, int n) {
-  return (v[PREV_INDEX(i, n)].y != v[i].y) || (v[NEXT_INDEX(i, n)].y != v[i].y);
+  return (v.vertex[PREV_INDEX(i, n)].y != v.vertex[i].y) ||
+         (v.vertex[NEXT_INDEX(i, n)].y != v.vertex[i].y);
 }
 
 #define FWD_MIN(v, i, n)                                                       \
@@ -113,7 +114,17 @@ bool OPTIMAL(gpc_vertex_list const &v, int i, int n) {
     (i) = (d)->bot.x + (d)->dx * ((j) - (d)->bot.y);                           \
   }
 
-#define MALLOC(p, b, s, t) p = new t;
+#define MALLOC(p, b, s, t)                                                     \
+  {                                                                            \
+    if ((b) > 0) {                                                             \
+      p = (t *)malloc(b);                                                      \
+      if (!(p)) {                                                              \
+        fprintf(stderr, "gpc malloc failure: %s\n", s);                        \
+        exit(0);                                                               \
+      }                                                                        \
+    } else                                                                     \
+      p = NULL;                                                                \
+  }
 
 /*
 ===========================================================================
@@ -121,7 +132,7 @@ bool OPTIMAL(gpc_vertex_list const &v, int i, int n) {
 ===========================================================================
 */
 
-enum class vertex_type /* Edge intersection classes         */
+enum vertex_type /* Edge intersection classes         */
 {
   NUL, /* Empty non-intersection            */
   EMX, /* External maximum                  */
@@ -378,10 +389,10 @@ static int count_optimal_vertices(gpc_vertex_list c) {
   int result = 0, i;
 
   /* Ignore non-contributing contours */
-  if (c.size() > 0) {
-    for (i = 0; i < c.size(); ++i)
+  if (c.vertex.size() > 0) {
+    for (i = 0; i < c.vertex.size(); ++i)
       /* Ignore superfluous vertices embedded in horizontal edges */
-      if (OPTIMAL(c, i, c.size()))
+      if (OPTIMAL(c, i, c.vertex.size()))
         result++;
   }
   return result;
@@ -393,22 +404,22 @@ static edge_node *build_lmt(lmt_node **lmt, sb_tree **sbtree, int *sbt_entries,
   int total_vertices = 0, e_index = 0;
   edge_node *e, *edge_table;
 
-  for (c = 0; c < p->num_contours; c++)
+  for (c = 0; c < p->num_contours(); c++)
     total_vertices += count_optimal_vertices(p->contour[c]);
 
   /* Create the entire input polygon edge table in one go */
   MALLOC(edge_table, total_vertices * sizeof(edge_node), "edge table creation",
          edge_node);
 
-  for (c = 0; c < p->num_contours; c++) {
-    if (p->contour[c].size() < 0) {
+  for (c = 0; c < p->num_contours(); c++) {
+    if (!p->contour[c].is_contributing) {
       /* Ignore the non-contributing contour and repair the vertex count */
-      p->contour[c].size() = -p->contour[c].size();
+      p->contour[c].is_contributing = true;
     } else {
       /* Perform contour optimisation */
       num_vertices = 0;
-      for (i = 0; i < p->contour[c].size(); i++)
-        if (OPTIMAL(p->contour[c], i, p->contour[c].size())) {
+      for (i = 0; i < p->contour[c].vertex.size(); i++)
+        if (OPTIMAL(p->contour[c], i, p->contour[c].vertex.size())) {
           edge_table[num_vertices].vertex.x = p->contour[c].vertex[i].x;
           edge_table[num_vertices].vertex.y = p->contour[c].vertex[i].y;
 
@@ -888,17 +899,17 @@ static bbox *create_contour_bboxes(gpc_polygon *p) {
   bbox *box;
   int c, v;
 
-  MALLOC(box, p->num_contours * sizeof(bbox), "Bounding box creation", bbox);
+  MALLOC(box, p->num_contours() * sizeof(bbox), "Bounding box creation", bbox);
 
   /* Construct contour bounding boxes */
-  for (c = 0; c < p->num_contours; c++) {
+  for (c = 0; c < p->num_contours(); c++) {
     /* Initialise bounding box extent */
     box[c].xmin = DBL_MAX;
     box[c].ymin = DBL_MAX;
     box[c].xmax = -DBL_MAX;
     box[c].ymax = -DBL_MAX;
 
-    for (v = 0; v < p->contour[c].size(); v++) {
+    for (v = 0; v < p->contour[c].vertex.size(); v++) {
       /* Adjust bounding box */
       if (p->contour[c].vertex[v].x < box[c].xmin)
         box[c].xmin = p->contour[c].vertex[v].x;
@@ -920,39 +931,39 @@ static void minimax_test(gpc_polygon *subj, gpc_polygon *clip, gpc_op op) {
   s_bbox = create_contour_bboxes(subj);
   c_bbox = create_contour_bboxes(clip);
 
-  MALLOC(o_table, subj->num_contours * clip->num_contours * sizeof(int),
+  MALLOC(o_table, subj->num_contours() * clip->num_contours() * sizeof(int),
          "overlap table creation", int);
 
   /* Check all subject contour bounding boxes against clip boxes */
-  for (s = 0; s < subj->num_contours; s++)
-    for (c = 0; c < clip->num_contours; c++)
-      o_table[c * subj->num_contours + s] =
+  for (s = 0; s < subj->num_contours(); s++)
+    for (c = 0; c < clip->num_contours(); c++)
+      o_table[c * subj->num_contours() + s] =
           (!((s_bbox[s].xmax < c_bbox[c].xmin) ||
              (s_bbox[s].xmin > c_bbox[c].xmax))) &&
           (!((s_bbox[s].ymax < c_bbox[c].ymin) ||
              (s_bbox[s].ymin > c_bbox[c].ymax)));
 
   /* For each clip contour, search for any subject contour overlaps */
-  for (c = 0; c < clip->num_contours; c++) {
+  for (c = 0; c < clip->num_contours(); c++) {
     overlap = 0;
-    for (s = 0; (!overlap) && (s < subj->num_contours); s++)
-      overlap = o_table[c * subj->num_contours + s];
+    for (s = 0; (!overlap) && (s < subj->num_contours()); s++)
+      overlap = o_table[c * subj->num_contours() + s];
 
     if (!overlap)
       /* Flag non contributing status by negating vertex count */
-      clip->contour[c].size() = -clip->contour[c].size();
+      clip->contour[c].is_contributing = !clip->contour[c].is_contributing;
   }
 
   if (op == gpc_op::GPC_INT) {
     /* For each subject contour, search for any clip contour overlaps */
-    for (s = 0; s < subj->num_contours; s++) {
+    for (s = 0; s < subj->num_contours(); s++) {
       overlap = 0;
-      for (c = 0; (!overlap) && (c < clip->num_contours); c++)
-        overlap = o_table[c * subj->num_contours + s];
+      for (c = 0; (!overlap) && (c < clip->num_contours()); c++)
+        overlap = o_table[c * subj->num_contours() + s];
 
       if (!overlap)
         /* Flag non contributing status by negating vertex count */
-        subj->contour[s].size() = -subj->contour[s].size();
+        subj->contour[s].is_contributing = !subj->contour[s].is_contributing;
     }
   }
 
@@ -966,94 +977,6 @@ static void minimax_test(gpc_polygon *subj, gpc_polygon *clip, gpc_op op) {
                              Public Functions
 ===========================================================================
 */
-
-void gpc_free_polygon(gpc_polygon *p) {
-  int c;
-
-  for (c = 0; c < p->num_contours; c++)
-    delete (p->contour[c].vertex);
-  delete (p->hole);
-  delete (p->contour);
-  p->num_contours = 0;
-}
-
-void gpc_read_polygon(FILE *fp, int read_hole_flags, gpc_polygon *p) {
-  int c, v;
-
-  fscanf_s(fp, "%d", &(p->num_contours));
-  MALLOC(p->hole, p->num_contours * sizeof(int), "hole flag array creation",
-         int);
-  MALLOC(p->contour, p->num_contours * sizeof(gpc_vertex_list),
-         "contour creation", gpc_vertex_list);
-  for (c = 0; c < p->num_contours; c++) {
-    fscanf_s(fp, "%d", &(p->contour[c].size()));
-
-    if (read_hole_flags)
-      fscanf_s(fp, "%d", &(p->hole[c]));
-    else
-      p->hole[c] = FALSE; /* Assume all contours to be external */
-
-    MALLOC(p->contour[c].vertex, p->contour[c].size() * sizeof(gpc_vertex),
-           "vertex creation", gpc_vertex);
-    for (v = 0; v < p->contour[c].size(); v++)
-      fscanf_s(fp, "%lf %lf", &(p->contour[c].vertex[v].x),
-               &(p->contour[c].vertex[v].y));
-  }
-}
-
-void gpc_write_polygon(FILE *fp, int write_hole_flags, gpc_polygon *p) {
-  int c, v;
-
-  fprintf(fp, "%d\n", p->num_contours);
-  for (c = 0; c < p->num_contours; c++) {
-    fprintf(fp, "%d\n", p->contour[c].size());
-
-    if (write_hole_flags)
-      fprintf(fp, "%d\n", p->hole[c]);
-
-    for (v = 0; v < p->contour[c].size(); v++)
-      fprintf(fp, "% .*lf % .*lf\n", DBL_DIG, p->contour[c].vertex[v].x,
-              DBL_DIG, p->contour[c].vertex[v].y);
-  }
-}
-
-void gpc_add_contour(gpc_polygon *p, gpc_vertex_list *new_contour, int hole) {
-  int *extended_hole, c, v;
-  gpc_vertex_list *extended_contour;
-
-  /* Create an extended hole array */
-  MALLOC(extended_hole, (p->num_contours + 1) * sizeof(int),
-         "contour hole addition", int);
-
-  /* Create an extended contour array */
-  MALLOC(extended_contour, (p->num_contours + 1) * sizeof(gpc_vertex_list),
-         "contour addition", gpc_vertex_list);
-
-  /* Copy the old contour and hole data into the extended arrays */
-  for (c = 0; c < p->num_contours; c++) {
-    extended_hole[c] = p->hole[c];
-    extended_contour[c] = p->contour[c];
-  }
-
-  /* Copy the new contour and hole onto the end of the extended arrays */
-  c = p->num_contours;
-  extended_hole[c] = hole;
-  extended_contour[c].size() = new_contour->num_vertices;
-  MALLOC(extended_contour[c].vertex,
-         new_contour->num_vertices * sizeof(gpc_vertex), "contour addition",
-         gpc_vertex);
-  for (v = 0; v < new_contour->num_vertices; v++)
-    extended_contour[c].vertex[v] = new_contour->vertex[v];
-
-  /* Dispose of the old contour */
-  delete (p->contour);
-  delete (p->hole);
-
-  /* Update the polygon information */
-  p->num_contours++;
-  p->hole = extended_hole;
-  p->contour = extended_contour;
-}
 
 void gpc_polygon_clip(gpc_op op, gpc_polygon *subj, gpc_polygon *clip,
                       gpc_polygon *result) {
@@ -1071,32 +994,27 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon *subj, gpc_polygon *clip,
   double *sbt = nullptr, xb, px, yb, yt, dy, ix, iy;
 
   /* Test for trivial nullptr result cases */
-  if (((subj->num_contours == 0) && (clip->num_contours == 0)) ||
-      ((subj->num_contours == 0) &&
+  if (((subj->num_contours() == 0) && (clip->num_contours() == 0)) ||
+      ((subj->num_contours() == 0) &&
        ((op == gpc_op::GPC_INT) || (op == gpc_op::GPC_DIFF))) ||
-      ((clip->num_contours == 0) && (op == gpc_op::GPC_INT))) {
-    result->num_contours = 0;
-    result->hole = nullptr;
-    result->contour = nullptr;
+      ((clip->num_contours() == 0) && (op == gpc_op::GPC_INT))) {
     return;
   }
 
   /* Identify potentialy contributing contours */
   if (((op == gpc_op::GPC_INT) || (op == gpc_op::GPC_DIFF)) &&
-      (subj->num_contours > 0) && (clip->num_contours > 0))
+      (subj->num_contours() > 0) && (clip->num_contours() > 0))
     minimax_test(subj, clip, op);
 
   /* Build LMT */
-  if (subj->num_contours > 0)
+  if (subj->num_contours() > 0)
     s_heap = build_lmt(&lmt, &sbtree, &sbt_entries, subj, SUBJ, op);
-  if (clip->num_contours > 0)
+  if (clip->num_contours() > 0)
     c_heap = build_lmt(&lmt, &sbtree, &sbt_entries, clip, CLIP, op);
 
   /* Return a nullptr result if no contours contribute */
   if (lmt == nullptr) {
-    result->num_contours = 0;
-    result->hole = nullptr;
-    result->contour = nullptr;
+
     reset_lmt(&lmt);
     delete (s_heap);
     delete (c_heap);
@@ -1109,11 +1027,11 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon *subj, gpc_polygon *clip,
   scanbeam = 0;
   free_sbtree(&sbtree);
 
-  /* Allow pointer re-use without causing memory leak */
+  // /* Allow pointer re-use without causing memory leak */
   if (subj == result)
-    gpc_free_polygon(subj);
+    delete subj;
   if (clip == result)
-    gpc_free_polygon(clip);
+    delete clip;
 
   /* Invert clip polygon for difference operation */
   if (op == gpc_op::GPC_DIFF)
@@ -1564,26 +1482,19 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon *subj, gpc_polygon *clip,
   } /* === END OF SCANBEAM PROCESSING ================================== */
 
   /* Generate result polygon from out_poly */
-  result->contour = nullptr;
-  result->hole = nullptr;
-  result->num_contours = count_contours(out_poly);
-  if (result->num_contours > 0) {
-    MALLOC(result->hole, result->num_contours * sizeof(int),
-           "hole flag table creation", int);
-    MALLOC(result->contour, result->num_contours * sizeof(gpc_vertex_list),
-           "contour creation", gpc_vertex_list);
+  if (count_contours(out_poly) > 0) {
+    result->hole.resize(count_contours(out_poly));
+    result->contour.resize(count_contours(out_poly));
 
     c = 0;
     for (poly = out_poly; poly; poly = npoly) {
       npoly = poly->next;
       if (poly->active) {
         result->hole[c] = poly->proxy->hole;
-        result->contour[c].size() = poly->active;
-        MALLOC(result->contour[c].vertex,
-               result->contour[c].size() * sizeof(gpc_vertex),
-               "vertex creation", gpc_vertex);
 
-        v = result->contour[c].size() - 1;
+        result->contour[c].vertex.resize(poly->active);
+
+        v = result->contour[c].vertex.size() - 1;
         for (vtx = poly->proxy->v[LEFT]; vtx; vtx = nv) {
           nv = vtx->next;
           result->contour[c].vertex[v].x = vtx->x;
@@ -1611,20 +1522,15 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon *subj, gpc_polygon *clip,
 }
 
 void gpc_free_tristrip(gpc_tristrip *t) {
-  int s;
+  for (int s = 0; s < t->num_strips; ++s)
+    t->strip[s].vertex.clear();
 
-  for (s = 0; s < t->num_strips; s++)
-    delete (t->strip[s].vertex);
   delete (t->strip);
   t->num_strips = 0;
 }
 
 void gpc_polygon_to_tristrip(gpc_polygon *s, gpc_tristrip *t) {
   gpc_polygon c;
-
-  c.num_contours = 0;
-  c.hole = nullptr;
-  c.contour = nullptr;
   gpc_tristrip_clip(gpc_op::GPC_DIFF, s, &c, t);
 }
 
@@ -1645,10 +1551,10 @@ void gpc_tristrip_clip(gpc_op op, gpc_polygon *subj, gpc_polygon *clip,
   double *sbt = nullptr, xb, px, nx, yb, yt, dy, ix, iy;
 
   /* Test for trivial nullptr result cases */
-  if (((subj->num_contours == 0) && (clip->num_contours == 0)) ||
-      ((subj->num_contours == 0) &&
+  if (((subj->num_contours() == 0) && (clip->num_contours() == 0)) ||
+      ((subj->num_contours() == 0) &&
        ((op == gpc_op::GPC_INT) || (op == gpc_op::GPC_DIFF))) ||
-      ((clip->num_contours == 0) && (op == gpc_op::GPC_INT))) {
+      ((clip->num_contours() == 0) && (op == gpc_op::GPC_INT))) {
     result->num_strips = 0;
     result->strip = nullptr;
     return;
@@ -1656,13 +1562,13 @@ void gpc_tristrip_clip(gpc_op op, gpc_polygon *subj, gpc_polygon *clip,
 
   /* Identify potentialy contributing contours */
   if (((op == gpc_op::GPC_INT) || (op == gpc_op::GPC_DIFF)) &&
-      (subj->num_contours > 0) && (clip->num_contours > 0))
+      (subj->num_contours() > 0) && (clip->num_contours() > 0))
     minimax_test(subj, clip, op);
 
   /* Build LMT */
-  if (subj->num_contours > 0)
+  if (subj->num_contours() > 0)
     s_heap = build_lmt(&lmt, &sbtree, &sbt_entries, subj, SUBJ, op);
-  if (clip->num_contours > 0)
+  if (clip->num_contours() > 0)
     c_heap = build_lmt(&lmt, &sbtree, &sbt_entries, clip, CLIP, op);
 
   /* Return a nullptr result if no contours contribute */
@@ -2175,9 +2081,8 @@ void gpc_tristrip_clip(gpc_op op, gpc_polygon *subj, gpc_polygon *clip,
 
       if (tn->active > 2) {
         /* Valid tristrip: copy the vertices and free the heap */
-        result->strip[s].size() = tn->active;
-        MALLOC(result->strip[s].vertex, tn->active * sizeof(gpc_vertex),
-               "tristrip creation", gpc_vertex);
+        result->strip[s].vertex.resize(tn->active);
+
         v = 0;
         if (INVERT_TRISTRIPS) {
           lt = tn->v[RIGHT];

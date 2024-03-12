@@ -38,7 +38,8 @@ Copyright: (C) Advanced Interfaces Group,
 #include <math.h>
 #include <stdlib.h>
 #include <string>
-#include <vector>
+
+#include "gpc_polygon.hpp"
 
 namespace gpc {
 
@@ -68,28 +69,6 @@ enum class gpc_op /* Set operation type                */
   GPC_UNION /* Union                             */
 };
 
-struct gpc_vertex /* Polygon vertex structure          */
-{
-  double x = 0.0; /* Vertex x component                */
-  double y = 0.0; /* vertex y component                */
-};
-
-// struct gpc_vertex_list /* Vertex list structure             */
-// {
-//   int num_vertices = 0;         /* Number of vertices in list        */
-//   gpc_vertex *vertex = nullptr; /* Vertex array pointer              */
-// };
-
-typedef std::vector<gpc_vertex> gpc_vertex_list;
-
-// TODO:
-struct gpc_polygon /* Polygon set structure             */
-{
-  int num_contours = 0;               /* Number of contours in polygon     */
-  int *hole = nullptr;                /* Hole / external contour flags     */
-  gpc_vertex_list *contour = nullptr; /* Contour array pointer             */
-};
-
 struct gpc_tristrip /* Tristrip set structure            */
 {
   int num_strips = 0;               /* Number of tristrips               */
@@ -102,14 +81,6 @@ struct gpc_tristrip /* Tristrip set structure            */
 ===========================================================================
 */
 
-void gpc_read_polygon(FILE *infile_ptr, int read_hole_flags,
-                      gpc_polygon *polygon);
-
-void gpc_write_polygon(FILE *outfile_ptr, int write_hole_flags,
-                       gpc_polygon *polygon);
-
-void gpc_add_contour(gpc_polygon *polygon, gpc_vertex_list *contour, int hole);
-
 void gpc_polygon_clip(gpc_op set_operation, gpc_polygon *subject_polygon,
                       gpc_polygon *clip_polygon, gpc_polygon *result_polygon);
 
@@ -118,8 +89,6 @@ void gpc_tristrip_clip(gpc_op set_operation, gpc_polygon *subject_polygon,
                        gpc_tristrip *result_tristrip);
 
 void gpc_polygon_to_tristrip(gpc_polygon *polygon, gpc_tristrip *tristrip);
-
-void gpc_free_polygon(gpc_polygon *polygon);
 
 void gpc_free_tristrip(gpc_tristrip *tristrip);
 
