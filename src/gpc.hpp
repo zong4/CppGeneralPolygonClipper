@@ -34,6 +34,7 @@ Copyright: (C) Advanced Interfaces Group,
 #define __gpc_h
 
 // TODO:
+#include <algorithm>
 #include <float.h>
 #include <math.h>
 #include <stdlib.h>
@@ -75,10 +76,6 @@ struct gpc_tristrip /* Tristrip set structure            */
 
 void gpc_polygon_clip(gpc_op set_operation, gpc_polygon *subject_polygon,
                       gpc_polygon *clip_polygon, gpc_polygon *result_polygon);
-
-void gpc_tristrip_clip(gpc_op set_operation, gpc_polygon *subject_polygon,
-                       gpc_polygon *clip_polygon,
-                       gpc_tristrip *result_tristrip);
 
 void gpc_polygon_to_tristrip(gpc_polygon *polygon, gpc_tristrip *tristrip);
 
