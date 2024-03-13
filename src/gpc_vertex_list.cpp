@@ -25,7 +25,25 @@ std::ostream &gpc::operator<<(std::ostream &os,
   return os;
 }
 
-void gpc::gpc_vertex_list::optimal() {}
+gpc::bbox gpc::gpc_vertex_list::create_bbox() const {
+  bbox bbox;
+
+  if (num_vertices() > 0) {
+    bbox.xmin = vertex[0].x;
+    bbox.ymin = vertex[0].y;
+    bbox.xmax = vertex[0].x;
+    bbox.ymax = vertex[0].y;
+  }
+
+  for (int i = 1; i < num_vertices(); ++i) {
+    bbox.xmin = std::min(bbox.xmin, vertex[i].x);
+    bbox.ymin = std::min(bbox.ymin, vertex[i].y);
+    bbox.xmax = std::max(bbox.xmax, vertex[i].x);
+    bbox.ymax = std::max(bbox.ymax, vertex[i].y);
+  }
+
+  return bbox;
+}
 
 std::string gpc::gpc_vertex_list::to_string() const {
   std::stringstream ss;

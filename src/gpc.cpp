@@ -233,14 +233,6 @@ typedef struct st_shape /* Sorted edge table                 */
   struct st_shape *prev; /* Previous edge in sorted list      */
 } st_node;
 
-typedef struct bbox_shape /* Contour axis-aligned bounding box */
-{
-  double xmin = 0.0; /* Minimum x coordinate              */
-  double ymin = 0.0; /* Minimum y coordinate              */
-  double xmax = 0.0; /* Maximum x coordinate              */
-  double ymax = 0.0; /* Maximum y coordinate              */
-} bbox;
-
 /*
 ===========================================================================
                                Global Data
@@ -895,83 +887,6 @@ static void new_tristrip(polygon_node **tn, edge_node *edge, double x,
     new_tristrip(&((*tn)->next), edge, x, y);
 }
 
-static bbox *create_contour_bboxes(gpc_polygon *p) {
-  bbox *box;
-  int c, v;
-
-  MALLOC(box, p->num_contours() * sizeof(bbox), "Bounding box creation", bbox);
-
-  /* Construct contour bounding boxes */
-  for (c = 0; c < p->num_contours(); c++) {
-    /* Initialise bounding box extent */
-    box[c].xmin = DBL_MAX;
-    box[c].ymin = DBL_MAX;
-    box[c].xmax = -DBL_MAX;
-    box[c].ymax = -DBL_MAX;
-
-    for (v = 0; v < p->contour[c].vertex.size(); v++) {
-      /* Adjust bounding box */
-      if (p->contour[c].vertex[v].x < box[c].xmin)
-        box[c].xmin = p->contour[c].vertex[v].x;
-      if (p->contour[c].vertex[v].y < box[c].ymin)
-        box[c].ymin = p->contour[c].vertex[v].y;
-      if (p->contour[c].vertex[v].x > box[c].xmax)
-        box[c].xmax = p->contour[c].vertex[v].x;
-      if (p->contour[c].vertex[v].y > box[c].ymax)
-        box[c].ymax = p->contour[c].vertex[v].y;
-    }
-  }
-  return box;
-}
-
-static void minimax_test(gpc_polygon *subj, gpc_polygon *clip, gpc_op op) {
-  bbox *s_bbox, *c_bbox;
-  int s, c, *o_table, overlap;
-
-  s_bbox = create_contour_bboxes(subj);
-  c_bbox = create_contour_bboxes(clip);
-
-  MALLOC(o_table, subj->num_contours() * clip->num_contours() * sizeof(int),
-         "overlap table creation", int);
-
-  /* Check all subject contour bounding boxes against clip boxes */
-  for (s = 0; s < subj->num_contours(); s++)
-    for (c = 0; c < clip->num_contours(); c++)
-      o_table[c * subj->num_contours() + s] =
-          (!((s_bbox[s].xmax < c_bbox[c].xmin) ||
-             (s_bbox[s].xmin > c_bbox[c].xmax))) &&
-          (!((s_bbox[s].ymax < c_bbox[c].ymin) ||
-             (s_bbox[s].ymin > c_bbox[c].ymax)));
-
-  /* For each clip contour, search for any subject contour overlaps */
-  for (c = 0; c < clip->num_contours(); c++) {
-    overlap = 0;
-    for (s = 0; (!overlap) && (s < subj->num_contours()); s++)
-      overlap = o_table[c * subj->num_contours() + s];
-
-    if (!overlap)
-      /* Flag non contributing status by negating vertex count */
-      clip->contour[c].is_contributing = !clip->contour[c].is_contributing;
-  }
-
-  if (op == gpc_op::GPC_INT) {
-    /* For each subject contour, search for any clip contour overlaps */
-    for (s = 0; s < subj->num_contours(); s++) {
-      overlap = 0;
-      for (c = 0; (!overlap) && (c < clip->num_contours()); c++)
-        overlap = o_table[c * subj->num_contours() + s];
-
-      if (!overlap)
-        /* Flag non contributing status by negating vertex count */
-        subj->contour[s].is_contributing = !subj->contour[s].is_contributing;
-    }
-  }
-
-  delete (s_bbox);
-  delete (c_bbox);
-  delete (o_table);
-}
-
 /*
 ===========================================================================
                              Public Functions
@@ -980,6 +895,7 @@ static void minimax_test(gpc_polygon *subj, gpc_polygon *clip, gpc_op op) {
 
 void gpc_polygon_clip(gpc_op op, gpc_polygon *subj, gpc_polygon *clip,
                       gpc_polygon *result) {
+  /* 初始化变量 */
   sb_tree *sbtree = nullptr;
   it_node *it = nullptr, *intersect;
   edge_node *edge, *prev_edge, *next_edge, *succ_edge, *e0, *e1;
@@ -993,7 +909,7 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon *subj, gpc_polygon *clip,
   int vclass, bl, br, tl, tr;
   double *sbt = nullptr, xb, px, yb, yt, dy, ix, iy;
 
-  /* Test for trivial nullptr result cases */
+  /* 检查是否有简单的空结果情况 */
   if (((subj->num_contours() == 0) && (clip->num_contours() == 0)) ||
       ((subj->num_contours() == 0) &&
        ((op == gpc_op::GPC_INT) || (op == gpc_op::GPC_DIFF))) ||
@@ -1001,18 +917,20 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon *subj, gpc_polygon *clip,
     return;
   }
 
-  /* Identify potentialy contributing contours */
+  // if()
+
+  /* 确定可能有贡献的轮廓 */
   if (((op == gpc_op::GPC_INT) || (op == gpc_op::GPC_DIFF)) &&
       (subj->num_contours() > 0) && (clip->num_contours() > 0))
     minimax_test(subj, clip, op);
 
-  /* Build LMT */
+  /* 构建局部最小表 */
   if (subj->num_contours() > 0)
     s_heap = build_lmt(&lmt, &sbtree, &sbt_entries, subj, SUBJ, op);
   if (clip->num_contours() > 0)
     c_heap = build_lmt(&lmt, &sbtree, &sbt_entries, clip, CLIP, op);
 
-  /* Return a nullptr result if no contours contribute */
+  /* 如果没有轮廓有贡献，返回空结果 */
   if (lmt == nullptr) {
 
     reset_lmt(&lmt);

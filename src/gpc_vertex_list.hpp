@@ -2,6 +2,7 @@
 
 #include <vector>
 
+#include "bbox.hpp"
 #include "gpc_vertex.hpp"
 
 namespace gpc {
@@ -19,14 +20,14 @@ public:
       : vertex(in_vertex) {}
   ~gpc_vertex_list() = default;
 
+  inline int num_vertices() const { return vertex.size(); }
+
   friend std::istream &operator>>(std::istream &is,
                                   gpc_vertex_list &vertex_list);
   friend std::ostream &operator<<(std::ostream &os,
                                   const gpc_vertex_list &vertex_list);
 
-  inline int num_vertices() const { return vertex.size(); }
-
-  void optimal(); // 空
+  bbox create_bbox() const;
 
   std::string to_string() const;
 };

@@ -61,14 +61,6 @@ const std::string GPC_VERSION = "2.33";
 ===========================================================================
 */
 
-enum class gpc_op /* Set operation type                */
-{
-  GPC_DIFF, /* Difference                        */
-  GPC_INT,  /* Intersection                      */
-  GPC_XOR,  /* Exclusive or                      */
-  GPC_UNION /* Union                             */
-};
-
 struct gpc_tristrip /* Tristrip set structure            */
 {
   int num_strips = 0;               /* Number of tristrips               */
