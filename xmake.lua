@@ -1,6 +1,7 @@
 add_rules("mode.debug", "mode.release")
 
 set_languages("c++20")
+add_cxxflags("/EHsc")
 add_mxflags("-Wno-error=deprecated-declarations", "-fno-strict-aliasing", "-Wno-error=expansion-to-defined")
 
 target("cpp_gpc")
