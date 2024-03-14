@@ -34,12 +34,16 @@ void gpc::insert_bound(gpc::edge_node **b, gpc::edge_node *e) {
 }
 
 gpc::Lmt::~Lmt() {
-  for (auto it = edge_tables.begin(); it != edge_tables.end(); ++it) {
-    delete[] * it;
+  for (auto &&edge_table : edge_tables) {
+    edge_table.clear();
   }
-
   edge_tables.clear();
+
+  for (auto &&lmt : lmt_list) {
+    delete lmt.second;
+  }
   lmt_list.clear();
+
   sbtree.clear();
 }
 

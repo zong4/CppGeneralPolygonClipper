@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 namespace gpc {
 
@@ -29,6 +29,8 @@ namespace gpc {
                                  Macros
 ===========================================================================
 */
+
+// TODO: 转换成函数
 
 #define EQ(a, b) (fabs((a) - (b)) <= GPC_EPSILON)
 

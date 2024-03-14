@@ -2,7 +2,7 @@
 
 namespace gpc {
 
-// TODO:
+// TODO: 链表
 class vertex_node /* Internal vertex list datatype     */
 {
 public:

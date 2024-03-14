@@ -15,7 +15,7 @@ class Lmt {
 public:
   std::vector<double> sbtree;
   std::list<lmt_node> lmt_list;
-  std::vector<edge_node *> edge_tables;
+  std::vector<std::vector<edge_node>> edge_tables;
 
   Lmt() = default;
   ~Lmt();

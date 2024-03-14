@@ -4,6 +4,7 @@
 
 namespace gpc {
 
+// TODO:
 typedef std::pair<double, edge_node *> lmt_node;
 
 // class lmt_node {

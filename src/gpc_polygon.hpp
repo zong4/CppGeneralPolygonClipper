@@ -27,6 +27,8 @@ public:
   std::string to_string() const;
 };
 
+void minimax_test_diff(gpc_polygon *subj, gpc_polygon *clip);
+void minimax_test_int(gpc_polygon *subj, gpc_polygon *clip);
 void minimax_test(gpc_polygon *subj, gpc_polygon *clip, gpc_op op);
 
 } // namespace gpc
