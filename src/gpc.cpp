@@ -445,16 +445,14 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon *subj, gpc_polygon *clip,
 
   /* 构建局部最小表 */
   Lmt lmt;
-  edge_node *s_heap = lmt.build_lmt(subj, SUBJ, op);
-  edge_node *c_heap = lmt.build_lmt(clip, CLIP, op);
+  lmt.build_lmt(subj, SUBJ, op);
+  lmt.build_lmt(clip, CLIP, op);
 
   std::sort(lmt.sbtree.begin(), lmt.sbtree.end());
   const std::vector<double> &sbt = lmt.sbtree;
 
   /* 如果没有轮廓有贡献，返回空结果 */
   if (lmt.lmt_list.empty()) {
-    delete c_heap;
-    delete s_heap;
     return;
   }
 
@@ -960,9 +958,6 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon *subj, gpc_polygon *clip,
 
   /* Tidy up */
   reset_it(&it);
-
-  delete c_heap;
-  delete s_heap;
 }
 
 void gpc_free_tristrip(gpc_tristrip *t) {

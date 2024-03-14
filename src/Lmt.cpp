@@ -35,7 +35,7 @@ void gpc::insert_bound(gpc::edge_node **b, gpc::edge_node *e) {
 
 gpc::Lmt::~Lmt() {
   for (auto &&edge_table : edge_tables) {
-    edge_table.clear();
+    delete edge_table;
   }
   edge_tables.clear();
 
@@ -47,11 +47,7 @@ gpc::Lmt::~Lmt() {
   sbtree.clear();
 }
 
-gpc::edge_node *gpc::Lmt::build_lmt(gpc_polygon *p, int type, gpc_op op) {
-  int min, max, num_edges, v;
-  int e_index = 0;
-  edge_node *e;
-
+void gpc::Lmt::build_lmt(gpc_polygon *p, int type, gpc_op op) {
   int total_vertices = 0;
   for (int c = 0; c < p->num_contours(); ++c) {
     for (int i = 0; i < p->contour[c].num_vertices(); ++i) {
@@ -63,119 +59,141 @@ gpc::edge_node *gpc::Lmt::build_lmt(gpc_polygon *p, int type, gpc_op op) {
 
   edge_node *edge_table;
   /* Create the entire input polygon edge table in one go */
+  // std::vector<edge_node> edge_table(total_vertices);
   MALLOC(edge_table, total_vertices * sizeof(edge_node), "edge table creation",
          edge_node);
 
+  int e_index = 0;
   for (int c = 0; c < p->num_contours(); ++c) {
     if (p->contour[c].is_contributing) {
       /* Perform contour optimisation */
       int cnt_vertices = 0;
-
       for (int i = 0; i < p->contour[c].num_vertices(); ++i)
         if (optimal(p->contour[c].vertex, i, p->contour[c].num_vertices())) {
-          edge_table[cnt_vertices].vertex.x = p->contour[c].vertex[i].x;
-          edge_table[cnt_vertices].vertex.y = p->contour[c].vertex[i].y;
+          edge_table[cnt_vertices].vertex = p->contour[c].vertex[i];
+          ++cnt_vertices;
 
           /* Record vertex in the scanbeam table */
           sbtree.push_back(p->contour[c].vertex[i].y);
-
-          ++cnt_vertices;
         }
 
       /* Do the contour forward pass */
-      for (int min = 0; min < cnt_vertices; min++) {
+      for (int min = 0; min < cnt_vertices; ++min) {
         /* If a forward local minimum... */
         if (FWD_MIN(edge_table, min, cnt_vertices)) {
           /* Search for the next local maximum... */
-          num_edges = 1;
-          max = NEXT_INDEX(min, cnt_vertices);
+          int num_edges = 1;
+          int max = NEXT_INDEX(min, cnt_vertices);
+
           while (NOT_FMAX(edge_table, max, cnt_vertices)) {
-            num_edges++;
+            ++num_edges;
             max = NEXT_INDEX(max, cnt_vertices);
           }
 
           /* Build the next edge list */
-          e = &edge_table[e_index];
-          e_index += num_edges;
-          v = min;
-          e[0].bstate[BELOW] = bundle_state::UNBUNDLED;
-          e[0].bundle[BELOW][CLIP] = FALSE;
-          e[0].bundle[BELOW][SUBJ] = FALSE;
+          edge_table[e_index].bstate[BELOW] = bundle_state::UNBUNDLED;
+          edge_table[e_index].bundle[BELOW][CLIP] = FALSE;
+          edge_table[e_index].bundle[BELOW][SUBJ] = FALSE;
+
+          int v = min;
           for (int i = 0; i < num_edges; ++i) {
-            e[i].xb = edge_table[v].vertex.x;
-            e[i].bot.x = edge_table[v].vertex.x;
-            e[i].bot.y = edge_table[v].vertex.y;
+            edge_table[e_index + i].xb = edge_table[v].vertex.x;
+            edge_table[e_index + i].bot.x = edge_table[v].vertex.x;
+            edge_table[e_index + i].bot.y = edge_table[v].vertex.y;
 
             v = NEXT_INDEX(v, cnt_vertices);
 
-            e[i].top.x = edge_table[v].vertex.x;
-            e[i].top.y = edge_table[v].vertex.y;
-            e[i].dx = (edge_table[v].vertex.x - e[i].bot.x) /
-                      (e[i].top.y - e[i].bot.y);
-            e[i].type = type;
-            e[i].outp[ABOVE] = NULL;
-            e[i].outp[BELOW] = NULL;
-            e[i].next = NULL;
-            e[i].prev = NULL;
-            e[i].succ =
-                ((num_edges > 1) && (i < (num_edges - 1))) ? &(e[i + 1]) : NULL;
-            e[i].pred = ((num_edges > 1) && (i > 0)) ? &(e[i - 1]) : NULL;
-            e[i].next_bound = NULL;
-            e[i].bside[CLIP] = (op == gpc_op::GPC_DIFF) ? RIGHT : LEFT;
-            e[i].bside[SUBJ] = LEFT;
+            edge_table[e_index + i].top.x = edge_table[v].vertex.x;
+            edge_table[e_index + i].top.y = edge_table[v].vertex.y;
+            edge_table[e_index + i].dx =
+                (edge_table[v].vertex.x - edge_table[e_index + i].bot.x) /
+                (edge_table[e_index + i].top.y - edge_table[e_index + i].bot.y);
+            edge_table[e_index + i].type = type;
+            edge_table[e_index + i].outp[ABOVE] = nullptr;
+            edge_table[e_index + i].outp[BELOW] = nullptr;
+            edge_table[e_index + i].next = nullptr;
+            edge_table[e_index + i].prev = nullptr;
+            edge_table[e_index + i].succ =
+                ((num_edges > 1) && (i < (num_edges - 1)))
+                    ? &(edge_table[e_index + i + 1])
+                    : nullptr;
+            edge_table[e_index + i].pred = ((num_edges > 1) && (i > 0))
+                                               ? &(edge_table[e_index + i - 1])
+                                               : nullptr;
+            edge_table[e_index + i].next_bound = nullptr;
+            edge_table[e_index + i].bside[CLIP] =
+                (op == gpc_op::GPC_DIFF) ? RIGHT : LEFT;
+            edge_table[e_index + i].bside[SUBJ] = LEFT;
           }
-          insert_bound(bound_list(edge_table[min].vertex.y), e);
+
+          // edge_node *e = &edge_table[e_index];
+          insert_bound(bound_list(edge_table[min].vertex.y),
+                       &edge_table[e_index]);
+
+          e_index += num_edges;
         }
       }
 
       /* Do the contour reverse pass */
-      for (min = 0; min < cnt_vertices; min++) {
+      for (int min = 0; min < cnt_vertices; ++min) {
         /* If a reverse local minimum... */
         if (REV_MIN(edge_table, min, cnt_vertices)) {
           /* Search for the previous local maximum... */
-          num_edges = 1;
-          max = PREV_INDEX(min, cnt_vertices);
+          int num_edges = 1;
+          int max = PREV_INDEX(min, cnt_vertices);
+
           while (NOT_RMAX(edge_table, max, cnt_vertices)) {
             num_edges++;
             max = PREV_INDEX(max, cnt_vertices);
           }
 
           /* Build the previous edge list */
-          e = &edge_table[e_index];
-          e_index += num_edges;
-          v = min;
-          e[0].bstate[BELOW] = bundle_state::UNBUNDLED;
-          e[0].bundle[BELOW][CLIP] = FALSE;
-          e[0].bundle[BELOW][SUBJ] = FALSE;
+          edge_table[e_index].bstate[BELOW] = bundle_state::UNBUNDLED;
+          edge_table[e_index].bundle[BELOW][CLIP] = FALSE;
+          edge_table[e_index].bundle[BELOW][SUBJ] = FALSE;
+
+          int v = min;
           for (int i = 0; i < num_edges; i++) {
-            e[i].xb = edge_table[v].vertex.x;
-            e[i].bot.x = edge_table[v].vertex.x;
-            e[i].bot.y = edge_table[v].vertex.y;
+            edge_table[e_index + i].xb = edge_table[v].vertex.x;
+            edge_table[e_index + i].bot.x = edge_table[v].vertex.x;
+            edge_table[e_index + i].bot.y = edge_table[v].vertex.y;
 
             v = PREV_INDEX(v, cnt_vertices);
 
-            e[i].top.x = edge_table[v].vertex.x;
-            e[i].top.y = edge_table[v].vertex.y;
-            e[i].dx = (edge_table[v].vertex.x - e[i].bot.x) /
-                      (e[i].top.y - e[i].bot.y);
-            e[i].type = type;
-            e[i].outp[ABOVE] = NULL;
-            e[i].outp[BELOW] = NULL;
-            e[i].next = NULL;
-            e[i].prev = NULL;
-            e[i].succ =
-                ((num_edges > 1) && (i < (num_edges - 1))) ? &(e[i + 1]) : NULL;
-            e[i].pred = ((num_edges > 1) && (i > 0)) ? &(e[i - 1]) : NULL;
-            e[i].next_bound = NULL;
-            e[i].bside[CLIP] = (op == gpc_op::GPC_DIFF) ? RIGHT : LEFT;
-            e[i].bside[SUBJ] = LEFT;
+            edge_table[e_index + i].top.x = edge_table[v].vertex.x;
+            edge_table[e_index + i].top.y = edge_table[v].vertex.y;
+            edge_table[e_index + i].dx =
+                (edge_table[v].vertex.x - edge_table[e_index + i].bot.x) /
+                (edge_table[e_index + i].top.y - edge_table[e_index + i].bot.y);
+            edge_table[e_index + i].type = type;
+            edge_table[e_index + i].outp[ABOVE] = nullptr;
+            edge_table[e_index + i].outp[BELOW] = nullptr;
+            edge_table[e_index + i].next = nullptr;
+            edge_table[e_index + i].prev = nullptr;
+            edge_table[e_index + i].succ =
+                ((num_edges > 1) && (i < (num_edges - 1)))
+                    ? &(edge_table[e_index + i + 1])
+                    : nullptr;
+            edge_table[e_index + i].pred = ((num_edges > 1) && (i > 0))
+                                               ? &(edge_table[e_index + i - 1])
+                                               : nullptr;
+            edge_table[e_index + i].next_bound = nullptr;
+            edge_table[e_index + i].bside[CLIP] =
+                (op == gpc_op::GPC_DIFF) ? RIGHT : LEFT;
+            edge_table[e_index + i].bside[SUBJ] = LEFT;
           }
-          insert_bound(bound_list(edge_table[min].vertex.y), e);
+
+          // edge_node *e = &edge_table[e_index];
+          insert_bound(bound_list(edge_table[min].vertex.y),
+                       &edge_table[e_index]);
+
+          e_index += num_edges;
         }
       }
     }
   }
-  return edge_table;
+
+  edge_tables.push_back(edge_table);
 }
 
 gpc::edge_node **gpc::Lmt::bound_list(double y) {

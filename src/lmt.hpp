@@ -15,12 +15,12 @@ class Lmt {
 public:
   std::vector<double> sbtree;
   std::list<lmt_node> lmt_list;
-  std::vector<std::vector<edge_node>> edge_tables;
+  std::vector<edge_node *> edge_tables;
 
   Lmt() = default;
   ~Lmt();
 
-  edge_node *build_lmt(gpc_polygon *p, int type, gpc_op op);
+  void build_lmt(gpc_polygon *p, int type, gpc_op op);
 
 private:
   edge_node **bound_list(double y);
