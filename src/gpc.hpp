@@ -40,21 +40,11 @@ Copyright: (C) Advanced Interfaces Group,
 #include <stdlib.h>
 #include <string>
 
-#include "gpc_polygon.hpp"
+#include "Lmt.hpp"
+#include "constants.hpp"
+
 
 namespace gpc {
-
-/*
-===========================================================================
-                             Constants
-===========================================================================
-*/
-
-/* Increase GPC_EPSILON to encourage merging of near coincident edges    */
-
-const double GPC_EPSILON = DBL_EPSILON;
-
-const std::string GPC_VERSION = "2.33";
 
 /*
 ===========================================================================

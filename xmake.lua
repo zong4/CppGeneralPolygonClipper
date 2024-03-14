@@ -1,8 +1,9 @@
 add_rules("mode.debug", "mode.release")
 
 set_languages("c++20")
+add_mxflags("-Wno-error=deprecated-declarations", "-fno-strict-aliasing", "-Wno-error=expansion-to-defined")
 
-target("gpc_old")
+target("cpp_gpc")
     set_kind("binary")
     add_files("src/*.cpp")
 

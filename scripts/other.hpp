@@ -596,3 +596,135 @@ void gpc_tristrip_clip(gpc_op op, gpc_polygon *subj, gpc_polygon *clip,
   delete s_heap;
   delete sbt;
 }
+
+static void build_lmt(std::list<lmt_node> &lmt, std::vector<double> &sbtree,
+                      gpc_polygon *p, int type, gpc_op op) {
+  int e_index = 0;
+
+  for (int c = 0; c < p->num_contours(); ++c) {
+    std::vector<edge_node> edge_table;
+    if (p->contour[c].is_contributing) {
+      /* Perform contour optimisation */
+      for (int i = 0; i < p->contour[c].vertex.size(); ++i) {
+        if (OPTIMAL(p->contour[c], i, p->contour[c].vertex.size())) {
+          /* Record vertex in the scanbeam table */
+          sbtree.push_back(p->contour[c].vertex[i].y);
+
+          edge_node e;
+          e.vertex = p->contour[c].vertex[i];
+          edge_table.push_back(e);
+        }
+      }
+
+      /* Do the contour forward pass */
+      for (int min = 0; min < edge_table.size(); ++min) {
+        /* If a forward local minimum... */
+        if (FWD_MIN(edge_table, min, edge_table.size())) {
+          /* Search for the next local maximum... */
+          int num_edges = 1;
+          int max = NEXT_INDEX(min, edge_table.size());
+
+          while (NOT_FMAX(edge_table, max, edge_table.size())) {
+            ++num_edges;
+            max = NEXT_INDEX(max, edge_table.size());
+          }
+
+          /* Build the next edge list */
+          edge_table[e_index].bstate[BELOW] = bundle_state::UNBUNDLED;
+          edge_table[e_index].bundle[BELOW][CLIP] = FALSE;
+          edge_table[e_index].bundle[BELOW][SUBJ] = FALSE;
+
+          int v = min;
+          for (int i = 0; i < num_edges; ++i) {
+            edge_table[e_index + i].xb = edge_table[v].vertex.x;
+            edge_table[e_index + i].bot.x = edge_table[v].vertex.x;
+            edge_table[e_index + i].bot.y = edge_table[v].vertex.y;
+
+            v = NEXT_INDEX(v, edge_table.size());
+
+            edge_table[e_index + i].top.x = edge_table[v].vertex.x;
+            edge_table[e_index + i].top.y = edge_table[v].vertex.y;
+            edge_table[e_index + i].dx =
+                (edge_table[v].vertex.x - edge_table[e_index + i].bot.x) /
+                (edge_table[e_index + i].top.y - edge_table[e_index + i].bot.y);
+            edge_table[e_index + i].type = type;
+            edge_table[e_index + i].outp[ABOVE] = nullptr;
+            edge_table[e_index + i].outp[BELOW] = nullptr;
+            edge_table[e_index + i].next = nullptr;
+            edge_table[e_index + i].prev = nullptr;
+            edge_table[e_index + i].succ =
+                ((num_edges > 1) && (i < (num_edges - 1)))
+                    ? &(edge_table[e_index + i + 1])
+                    : nullptr;
+            edge_table[e_index + i].pred = ((num_edges > 1) && (i > 0))
+                                               ? &(edge_table[e_index + i - 1])
+                                               : nullptr;
+            edge_table[e_index + i].next_bound = nullptr;
+            edge_table[e_index + i].bside[CLIP] =
+                (op == gpc_op::GPC_DIFF) ? RIGHT : LEFT;
+            edge_table[e_index + i].bside[SUBJ] = LEFT;
+          }
+
+          edge_node *e = &edge_table[e_index];
+          e_index += num_edges;
+          insert_bound(lmt, edge_table[min].vertex.y, e);
+        }
+      }
+
+      /* Do the contour reverse pass */
+      for (int min = 0; min < edge_table.size(); ++min) {
+        /* If a reverse local minimum... */
+        if (REV_MIN(edge_table, min, edge_table.size())) {
+          /* Search for the previous local maximum... */
+          int num_edges = 1;
+          int max = PREV_INDEX(min, edge_table.size());
+          while (NOT_RMAX(edge_table, max, edge_table.size())) {
+            ++num_edges;
+            max = PREV_INDEX(max, edge_table.size());
+          }
+
+          edge_table[e_index].bstate[BELOW] = bundle_state::UNBUNDLED;
+          edge_table[e_index].bundle[BELOW][CLIP] = FALSE;
+          edge_table[e_index].bundle[BELOW][SUBJ] = FALSE;
+
+          /* Build the previous edge list */
+          int v = min;
+          for (int i = 0; i < num_edges; ++i) {
+            edge_table[e_index + i].xb = edge_table[v].vertex.x;
+            edge_table[e_index + i].bot.x = edge_table[v].vertex.x;
+            edge_table[e_index + i].bot.y = edge_table[v].vertex.y;
+
+            v = PREV_INDEX(v, edge_table.size());
+
+            edge_table[e_index + i].top.x = edge_table[v].vertex.x;
+            edge_table[e_index + i].top.y = edge_table[v].vertex.y;
+            edge_table[e_index + i].dx =
+                (edge_table[v].vertex.x - edge_table[e_index + i].bot.x) /
+                (edge_table[e_index + i].top.y - edge_table[e_index + i].bot.y);
+            edge_table[e_index + i].type = type;
+            edge_table[e_index + i].outp[ABOVE] = nullptr;
+            edge_table[e_index + i].outp[BELOW] = nullptr;
+            edge_table[e_index + i].next = nullptr;
+            edge_table[e_index + i].prev = nullptr;
+            edge_table[e_index + i].succ =
+                ((num_edges > 1) && (i < (num_edges - 1)))
+                    ? &(edge_table[e_index + i + 1])
+                    : nullptr;
+            edge_table[e_index + i].pred = ((num_edges > 1) && (i > 0))
+                                               ? &(edge_table[e_index + i - 1])
+                                               : nullptr;
+            edge_table[e_index + i].next_bound = nullptr;
+            edge_table[e_index + i].bside[CLIP] =
+                (op == gpc_op::GPC_DIFF) ? RIGHT : LEFT;
+            edge_table[e_index + i].bside[SUBJ] = LEFT;
+          }
+
+          edge_node *e = &edge_table[e_index];
+          insert_bound(lmt, edge_table[min].vertex.y, e);
+
+          e_index += num_edges;
+        }
+      }
+    }
+  }
+}
