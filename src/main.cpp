@@ -10,12 +10,14 @@ int main(int argc, char **argv) {
 
   subject_polygon.add_contour(
       gpc::gpc_vertex_list({{0, 0}, {100, 0}, {100, 100}, {0, 100}}), false);
+
   clip_polygon.add_contour(
-      gpc::gpc_vertex_list({{50, 50}, {150, 50}, {150, 150}, {50, 150}}),
-      false);
+      gpc::gpc_vertex_list({{25, 25}, {50, 25}, {50, 50}, {25, 50}}), false);
+  clip_polygon.add_contour(
+      gpc::gpc_vertex_list({{50, 50}, {75, 50}, {75, 75}, {50, 75}}), false);
 
   gpc::gpc_polygon result_polygon;
-  gpc::gpc_polygon_clip(gpc::gpc_op::GPC_INT, &subject_polygon, &clip_polygon,
+  gpc::gpc_polygon_clip(gpc::gpc_op::GPC_DIFF, &subject_polygon, &clip_polygon,
                         &result_polygon);
 
   result_polygon.add_contour(
