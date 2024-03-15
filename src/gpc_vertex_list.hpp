@@ -7,11 +7,10 @@
 
 namespace gpc {
 
-class gpc_vertex_list /* Vertex list structure             */
-{
+/* Vertex list structure             */
+class gpc_vertex_list {
 public:
   bool is_contributing = true;
-  // int num_vertices = 0;           /* Number of vertices in list        */
   std::vector<gpc_vertex> vertex; /* Vertex array pointer */
 
 public:

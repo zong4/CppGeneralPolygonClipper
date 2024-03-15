@@ -1,6 +1,12 @@
 #pragma once
 
+// #include <list>
+
+#include "gpc_vertex.hpp"
+
 namespace gpc {
+
+// typedef std::list<gpc_vertex> vertex_node_list;
 
 // TODO: 链表
 class vertex_node /* Internal vertex list datatype     */

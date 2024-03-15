@@ -5,10 +5,9 @@
 
 namespace gpc {
 
-class gpc_polygon /* Polygon set structure             */
-{
+/* Polygon set structure             */
+class gpc_polygon {
 public:
-  // int num_contours = 0;               /* Number of contours in polygon     */
   std::vector<bool> hole;               /* Hole / external contour flags     */
   std::vector<gpc_vertex_list> contour; /* Contour array pointer */
 

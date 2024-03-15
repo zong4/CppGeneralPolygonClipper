@@ -32,16 +32,12 @@ Copyright: (C) Advanced Interfaces Group,
 
 #pragma once
 
-// TODO:
 #include <algorithm>
-#include <float.h>
-#include <math.h>
-#include <stdlib.h>
 
 #include "gpc_constants.hpp"
 #include "gpc_lmt.hpp"
+#include "gpc_math.hpp"
 #include "gpc_tristrip.hpp"
-
 
 namespace gpc {
 
@@ -49,7 +45,5 @@ void gpc_polygon_clip(gpc_op set_operation, gpc_polygon &subject_polygon,
                       gpc_polygon &clip_polygon, gpc_polygon &result_polygon);
 
 void gpc_polygon_to_tristrip(gpc_polygon *polygon, gpc_tristrip *tristrip);
-
-void gpc_free_tristrip(gpc_tristrip *tristrip);
 
 } // namespace gpc

@@ -5,8 +5,8 @@
 namespace gpc {
 
 // TODO:
-class polygon_node /* Internal contour / tristrip type  */
-{
+/* Internal contour / tristrip type  */
+class polygon_node {
 public:
   int active = 0;                /* Active flag / vertex count        */
   int hole = 0;                  /* Hole / external contour flag      */

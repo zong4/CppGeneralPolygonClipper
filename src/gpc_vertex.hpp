@@ -5,8 +5,8 @@
 
 namespace gpc {
 
-class gpc_vertex /* Polygon vertex structure          */
-{
+/* Polygon vertex structure          */
+class gpc_vertex {
 public:
   double x = 0.0; /* Vertex x component                */
   double y = 0.0; /* vertex y component                */

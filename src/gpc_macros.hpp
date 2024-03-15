@@ -24,30 +24,7 @@ namespace gpc {
 
 #define INVERT_TRISTRIPS FALSE
 
-/*
-===========================================================================
-                                 Macros
-===========================================================================
-*/
-
 // TODO: 转换成函数
-
-#define EQ(a, b) (fabs((a) - (b)) <= GPC_EPSILON)
-
-#define PREV_INDEX(i, n) ((i - 1 + n) % n)
-#define NEXT_INDEX(i, n) ((i + 1) % n)
-
-#define FWD_MIN(v, i, n)                                                       \
-  ((v[PREV_INDEX(i, n)].vertex.y >= v[i].vertex.y) &&                          \
-   (v[NEXT_INDEX(i, n)].vertex.y > v[i].vertex.y))
-
-#define NOT_FMAX(v, i, n) (v[NEXT_INDEX(i, n)].vertex.y > v[i].vertex.y)
-
-#define REV_MIN(v, i, n)                                                       \
-  ((v[PREV_INDEX(i, n)].vertex.y > v[i].vertex.y) &&                           \
-   (v[NEXT_INDEX(i, n)].vertex.y >= v[i].vertex.y))
-
-#define NOT_RMAX(v, i, n) (v[PREV_INDEX(i, n)].vertex.y > v[i].vertex.y)
 
 #define VERTEX(e, p, s, x, y)                                                  \
   {                                                                            \

@@ -2,8 +2,8 @@
 
 namespace gpc {
 
-class gpc_bbox /* Contour axis-aligned bounding box */
-{
+/* Contour axis-aligned bounding box */
+class gpc_bbox {
 public:
   double xmin = 0.0; /* Minimum x coordinate              */
   double ymin = 0.0; /* Minimum y coordinate              */

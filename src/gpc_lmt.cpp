@@ -24,11 +24,9 @@ void gpc::gpc_lmt::build_lmt(const gpc_polygon &p, int type, gpc_op op) {
     }
   }
 
-  edge_node *edge_table;
   /* Create the entire input polygon edge table in one go */
-  // std::vector<edge_node> edge_table(total_vertices);
-  MALLOC(edge_table, total_vertices * sizeof(edge_node), "edge table creation",
-         edge_node);
+  edge_node *edge_table =
+      (edge_node *)malloc(total_vertices * sizeof(edge_node));
 
   int e_index = 0;
   for (int c = 0; c < p.num_contours(); ++c) {
@@ -47,14 +45,14 @@ void gpc::gpc_lmt::build_lmt(const gpc_polygon &p, int type, gpc_op op) {
       /* Do the contour forward pass */
       for (int min = 0; min < cnt_vertices; ++min) {
         /* If a forward local minimum... */
-        if (FWD_MIN(edge_table, min, cnt_vertices)) {
+        if (fwd_min(edge_table, min, cnt_vertices)) {
           /* Search for the next local maximum... */
           int num_edges = 1;
-          int max = NEXT_INDEX(min, cnt_vertices);
+          int max = next_index(min, cnt_vertices);
 
-          while (NOT_FMAX(edge_table, max, cnt_vertices)) {
+          while (not_fmax(edge_table, max, cnt_vertices)) {
             ++num_edges;
-            max = NEXT_INDEX(max, cnt_vertices);
+            max = next_index(max, cnt_vertices);
           }
 
           /* Build the next edge list */
@@ -67,7 +65,7 @@ void gpc::gpc_lmt::build_lmt(const gpc_polygon &p, int type, gpc_op op) {
             edge_table[e_index + i].xb = edge_table[v].vertex.x;
             edge_table[e_index + i].bot = edge_table[v].vertex;
 
-            v = NEXT_INDEX(v, cnt_vertices);
+            v = next_index(v, cnt_vertices);
 
             edge_table[e_index + i].top = edge_table[v].vertex;
 
@@ -110,14 +108,14 @@ void gpc::gpc_lmt::build_lmt(const gpc_polygon &p, int type, gpc_op op) {
       /* Do the contour reverse pass */
       for (int min = 0; min < cnt_vertices; ++min) {
         /* If a reverse local minimum... */
-        if (REV_MIN(edge_table, min, cnt_vertices)) {
+        if (rev_min(edge_table, min, cnt_vertices)) {
           /* Search for the previous local maximum... */
           int num_edges = 1;
-          int max = PREV_INDEX(min, cnt_vertices);
+          int max = prev_index(min, cnt_vertices);
 
-          while (NOT_RMAX(edge_table, max, cnt_vertices)) {
+          while (not_rmax(edge_table, max, cnt_vertices)) {
             num_edges++;
-            max = PREV_INDEX(max, cnt_vertices);
+            max = prev_index(max, cnt_vertices);
           }
 
           /* Build the previous edge list */
@@ -130,7 +128,7 @@ void gpc::gpc_lmt::build_lmt(const gpc_polygon &p, int type, gpc_op op) {
             edge_table[e_index + i].xb = edge_table[v].vertex.x;
             edge_table[e_index + i].bot = edge_table[v].vertex;
 
-            v = PREV_INDEX(v, cnt_vertices);
+            v = prev_index(v, cnt_vertices);
 
             edge_table[e_index + i].top.x = edge_table[v].vertex.x;
             edge_table[e_index + i].top.y = edge_table[v].vertex.y;

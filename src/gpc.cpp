@@ -524,7 +524,7 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
 
       /* Bundle edges above the scanbeam boundary if they coincide */
       if (next_edge->bundle[ABOVE][next_edge->type]) {
-        if (EQ(e0->xb, next_edge->xb) && EQ(e0->dx, next_edge->dx) &&
+        if (equal(e0->xb, next_edge->xb) && equal(e0->dx, next_edge->dx) &&
             (e0->top.y != yb)) {
           next_edge->bundle[ABOVE][next_edge->type] ^=
               e0->bundle[ABOVE][next_edge->type];
@@ -958,14 +958,6 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
 
   /* Tidy up */
   reset_it(&it);
-}
-
-void gpc_free_tristrip(gpc_tristrip *t) {
-  for (int s = 0; s < t->num_strips; ++s)
-    t->strip[s].vertex.clear();
-
-  delete (t->strip);
-  t->num_strips = 0;
 }
 
 void gpc_tristrip_clip(gpc_op op, gpc_polygon *subj, gpc_polygon *clip,

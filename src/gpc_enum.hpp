@@ -2,8 +2,8 @@
 
 namespace gpc {
 
-enum class gpc_op /* Set operation type                */
-{
+/* Set operation type                */
+enum class gpc_op {
   GPC_DIFF, /* Difference                        */
   GPC_INT,  /* Intersection                      */
   GPC_XOR,  /* Exclusive or                      */
@@ -16,8 +16,8 @@ enum class gpc_op /* Set operation type                */
 ===========================================================================
 */
 
-enum vertex_type /* Edge intersection classes         */
-{
+/* Edge intersection classes         */
+enum vertex_type {
   NUL, /* Empty non-intersection            */
   EMX, /* External maximum                  */
   ELI, /* External left intermediate        */
@@ -37,15 +37,15 @@ enum vertex_type /* Edge intersection classes         */
 };
 
 // 不改成 enum class，支持隐转
-enum h_state /* Horizontal edge states            */
-{
+/* Horizontal edge states            */
+enum h_state {
   NH, /* No horizontal edge                */
   BH, /* Bottom horizontal edge            */
   TH  /* Top horizontal edge               */
 };
 
-enum class bundle_state /* Edge bundle state                 */
-{
+/* Edge bundle state                 */
+enum class bundle_state {
   UNBUNDLED,   /* Isolated edge not within a bundle */
   BUNDLE_HEAD, /* Bundle head node                  */
   BUNDLE_TAIL  /* Passive bundle tail node          */
