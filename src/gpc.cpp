@@ -410,29 +410,29 @@ static void new_tristrip(polygon_node **tn, edge_node *edge, double x,
 ===========================================================================
 */
 
-void gpc_polygon_clip(gpc_op op, gpc_polygon *subj, gpc_polygon *clip,
-                      gpc_polygon *result) {
+void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
+                      gpc_polygon &result) {
   // clear result
-  result->contour.clear();
+  result.contour.clear();
 
-  if (subj->num_contours() == 0 && clip->num_contours() == 0) {
+  if (subj.num_contours() == 0 && clip.num_contours() == 0) {
     return;
   }
 
-  if (clip->num_contours() == 0) {
+  if (clip.num_contours() == 0) {
     if (op == gpc_op::GPC_INT) {
       return;
     } else {
-      *result = *subj;
+      result = subj;
       return;
     }
   }
 
-  if (subj->num_contours() == 0) {
+  if (subj.num_contours() == 0) {
     if ((op == gpc_op::GPC_INT) || (op == gpc_op::GPC_DIFF)) {
       return;
     } else {
-      *result = *clip;
+      result = clip;
       return;
     }
   }
@@ -444,7 +444,7 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon *subj, gpc_polygon *clip,
   }
 
   /* 构建局部最小表 */
-  Lmt lmt;
+  gpc_lmt lmt;
   lmt.build_lmt(subj, SUBJ, op);
   lmt.build_lmt(clip, CLIP, op);
 
@@ -926,26 +926,26 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon *subj, gpc_polygon *clip,
 
   /* Generate result polygon from out_poly */
   if (count_contours(out_poly) > 0) {
-    result->hole.resize(count_contours(out_poly));
-    result->contour.resize(count_contours(out_poly));
+    result.hole.resize(count_contours(out_poly));
+    result.contour.resize(count_contours(out_poly));
 
     c = 0;
     for (poly = out_poly; poly; poly = npoly) {
       npoly = poly->next;
       if (poly->active) {
-        result->hole[c] = poly->proxy->hole;
+        result.hole[c] = poly->proxy->hole;
 
-        result->contour[c].vertex.resize(poly->active);
+        result.contour[c].vertex.resize(poly->active);
 
-        v = result->contour[c].vertex.size() - 1;
+        v = result.contour[c].vertex.size() - 1;
         for (vtx = poly->proxy->v[LEFT]; vtx; vtx = nv) {
           nv = vtx->next;
-          result->contour[c].vertex[v].x = vtx->x;
-          result->contour[c].vertex[v].y = vtx->y;
+          result.contour[c].vertex[v].x = vtx->x;
+          result.contour[c].vertex[v].y = vtx->y;
           delete (vtx);
-          v--;
+          --v;
         }
-        c++;
+        ++c;
       }
       delete poly;
     }

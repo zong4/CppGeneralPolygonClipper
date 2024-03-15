@@ -30,53 +30,26 @@ Copyright: (C) Advanced Interfaces Group,
 ===========================================================================
 */
 
-#ifndef __gpc_h
-#define __gpc_h
+#pragma once
 
 // TODO:
 #include <algorithm>
 #include <float.h>
 #include <math.h>
 #include <stdlib.h>
-#include <string>
 
-#include "Lmt.hpp"
-#include "constants.hpp"
+#include "gpc_constants.hpp"
+#include "gpc_lmt.hpp"
+#include "gpc_tristrip.hpp"
 
 
 namespace gpc {
 
-/*
-===========================================================================
-                           Public Data Types
-===========================================================================
-*/
-
-struct gpc_tristrip /* Tristrip set structure            */
-{
-  int num_strips = 0;               /* Number of tristrips               */
-  gpc_vertex_list *strip = nullptr; /* Tristrip array pointer            */
-};
-
-/*
-===========================================================================
-                       Public Function Prototypes
-===========================================================================
-*/
-
-void gpc_polygon_clip(gpc_op set_operation, gpc_polygon *subject_polygon,
-                      gpc_polygon *clip_polygon, gpc_polygon *result_polygon);
+void gpc_polygon_clip(gpc_op set_operation, gpc_polygon &subject_polygon,
+                      gpc_polygon &clip_polygon, gpc_polygon &result_polygon);
 
 void gpc_polygon_to_tristrip(gpc_polygon *polygon, gpc_tristrip *tristrip);
 
 void gpc_free_tristrip(gpc_tristrip *tristrip);
 
 } // namespace gpc
-
-#endif
-
-/*
-===========================================================================
-                           End of file: gpc.h
-===========================================================================
-*/

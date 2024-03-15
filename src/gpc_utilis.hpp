@@ -1,7 +1,8 @@
 #pragma once
 
+#include "gpc_macros.hpp"
 #include "gpc_vertex_list.hpp"
-#include "macros.hpp"
+
 
 namespace gpc {
 

@@ -6,7 +6,7 @@
 
 namespace gpc {
 
-class file_system {
+class gpc_file_system {
 public:
   // static file_system &instance() { return new file_system(); }
 

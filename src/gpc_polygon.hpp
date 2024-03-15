@@ -1,6 +1,6 @@
 #pragma once
 
-#include "enum.hpp"
+#include "gpc_enum.hpp"
 #include "gpc_vertex_list.hpp"
 
 namespace gpc {
@@ -22,13 +22,13 @@ public:
   friend std::ostream &operator<<(std::ostream &os, const gpc_polygon &polygon);
 
   void add_contour(const gpc_vertex_list &in_contour, bool in_hole = false);
-  std::vector<bbox> create_contour_bboxes() const;
+  std::vector<gpc_bbox> create_contour_bboxes() const;
 
   std::string to_string() const;
 };
 
-void minimax_test_diff(gpc_polygon *subj, gpc_polygon *clip);
-void minimax_test_int(gpc_polygon *subj, gpc_polygon *clip);
-void minimax_test(gpc_polygon *subj, gpc_polygon *clip, gpc_op op);
+void minimax_test_diff(const gpc_polygon &subj, gpc_polygon &clip);
+void minimax_test_int(gpc_polygon &subj, gpc_polygon &clip);
+void minimax_test(gpc_polygon &subj, gpc_polygon &clip, gpc_op op);
 
 } // namespace gpc

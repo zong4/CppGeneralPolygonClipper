@@ -25,8 +25,8 @@ std::ostream &gpc::operator<<(std::ostream &os,
   return os;
 }
 
-gpc::bbox gpc::gpc_vertex_list::create_bbox() const {
-  bbox bbox;
+gpc::gpc_bbox gpc::gpc_vertex_list::create_bbox() const {
+  gpc_bbox bbox;
 
   if (num_vertices() > 0) {
     bbox.xmin = vertex[0].x;

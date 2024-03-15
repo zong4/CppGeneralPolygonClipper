@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "bbox.hpp"
+#include "gpc_bbox.hpp"
 #include "gpc_vertex.hpp"
 
 namespace gpc {
@@ -27,7 +27,7 @@ public:
   friend std::ostream &operator<<(std::ostream &os,
                                   const gpc_vertex_list &vertex_list);
 
-  bbox create_bbox() const;
+  gpc_bbox create_bbox() const;
 
   std::string to_string() const;
 };

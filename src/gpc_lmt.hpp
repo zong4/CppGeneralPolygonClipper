@@ -4,21 +4,21 @@
 #include <vector>
 
 #include "gpc_polygon.hpp"
+#include "gpc_utilis.hpp"
 #include "lmt_node.hpp"
-#include "utilis.hpp"
 
 namespace gpc {
 
-class Lmt {
+class gpc_lmt {
 public:
   std::vector<double> sbtree;
   std::list<lmt_node> lmt_list;
   std::vector<edge_node *> edge_tables;
 
-  Lmt() = default;
-  ~Lmt();
+  gpc_lmt() = default;
+  ~gpc_lmt();
 
-  void build_lmt(gpc_polygon *p, int type, gpc_op op);
+  void build_lmt(const gpc_polygon &p, int type, gpc_op op);
 
 private:
   edge_node **bound_list(double y);

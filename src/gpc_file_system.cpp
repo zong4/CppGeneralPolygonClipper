@@ -1,7 +1,7 @@
-#include "file_system.hpp"
+#include "gpc_file_system.hpp"
 
-void gpc::file_system::read_polygons(const std::string &file_path,
-                                     std::vector<gpc::gpc_polygon> &polygons) {
+void gpc::gpc_file_system::read_polygons(
+    const std::string &file_path, std::vector<gpc::gpc_polygon> &polygons) {
   // open file
   std::ifstream file(file_path);
 
@@ -19,7 +19,7 @@ void gpc::file_system::read_polygons(const std::string &file_path,
   file.close();
 }
 
-void gpc::file_system::write_polygons(
+void gpc::gpc_file_system::write_polygons(
     const std::string &file_path,
     const std::vector<gpc::gpc_polygon> &polygons) {
   // open or create file

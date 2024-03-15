@@ -1,6 +1,6 @@
-﻿#include "Lmt.hpp"
+﻿#include "gpc_lmt.hpp"
 
-gpc::Lmt::~Lmt() {
+gpc::gpc_lmt::~gpc_lmt() {
   for (auto &&edge_table : edge_tables) {
     delete edge_table;
   }
@@ -14,11 +14,11 @@ gpc::Lmt::~Lmt() {
   sbtree.clear();
 }
 
-void gpc::Lmt::build_lmt(gpc_polygon *p, int type, gpc_op op) {
+void gpc::gpc_lmt::build_lmt(const gpc_polygon &p, int type, gpc_op op) {
   int total_vertices = 0;
-  for (int c = 0; c < p->num_contours(); ++c) {
-    for (int i = 0; i < p->contour[c].num_vertices(); ++i) {
-      if (optimal(p->contour[c], i, p->contour[c].num_vertices())) {
+  for (int c = 0; c < p.num_contours(); ++c) {
+    for (int i = 0; i < p.contour[c].num_vertices(); ++i) {
+      if (optimal(p.contour[c], i, p.contour[c].num_vertices())) {
         ++total_vertices;
       }
     }
@@ -31,17 +31,17 @@ void gpc::Lmt::build_lmt(gpc_polygon *p, int type, gpc_op op) {
          edge_node);
 
   int e_index = 0;
-  for (int c = 0; c < p->num_contours(); ++c) {
-    if (p->contour[c].is_contributing) {
+  for (int c = 0; c < p.num_contours(); ++c) {
+    if (p.contour[c].is_contributing) {
       /* Perform contour optimisation */
       int cnt_vertices = 0;
-      for (int i = 0; i < p->contour[c].num_vertices(); ++i)
-        if (optimal(p->contour[c].vertex, i, p->contour[c].num_vertices())) {
-          edge_table[cnt_vertices].vertex = p->contour[c].vertex[i];
+      for (int i = 0; i < p.contour[c].num_vertices(); ++i)
+        if (optimal(p.contour[c].vertex, i, p.contour[c].num_vertices())) {
+          edge_table[cnt_vertices].vertex = p.contour[c].vertex[i];
           ++cnt_vertices;
 
           /* Record vertex in the scanbeam table */
-          sbtree.push_back(p->contour[c].vertex[i].y);
+          sbtree.push_back(p.contour[c].vertex[i].y);
         }
 
       /* Do the contour forward pass */
@@ -168,7 +168,7 @@ void gpc::Lmt::build_lmt(gpc_polygon *p, int type, gpc_op op) {
   edge_tables.push_back(edge_table);
 }
 
-gpc::edge_node **gpc::Lmt::bound_list(double y) {
+gpc::edge_node **gpc::gpc_lmt::bound_list(double y) {
   if (lmt_list.empty()) {
     /* Add node onto the tail end of the LMT */
     lmt_list.push_back(lmt_node(y, nullptr));

@@ -1,26 +1,16 @@
 #pragma once
 
-#include "enum.hpp"
+#include <string>
+
+#include "gpc_enum.hpp"
 
 namespace gpc {
 
-/*
-===========================================================================
-                         Constants
-===========================================================================
-*/
+const std::string GPC_VERSION = "2.33";
+const std::string CPP_GPC_VERSION = "1.00";
 
 /* Increase GPC_EPSILON to encourage merging of near coincident edges    */
-
 const double GPC_EPSILON = DBL_EPSILON;
-
-const std::string GPC_VERSION = "2.33";
-
-/*
-===========================================================================
-                               Global Data
-===========================================================================
-*/
 
 /* Horizontal edge state transitions within scanbeam boundary */
 const h_state next_h_state[3][6] = {

@@ -2,7 +2,7 @@
 
 namespace gpc {
 
-class bbox /* Contour axis-aligned bounding box */
+class gpc_bbox /* Contour axis-aligned bounding box */
 {
 public:
   double xmin = 0.0; /* Minimum x coordinate              */
@@ -11,6 +11,6 @@ public:
   double ymax = 0.0; /* Maximum y coordinate              */
 };
 
-bool is_intersect(const bbox &a, const bbox &b);
+bool is_intersect(const gpc_bbox &a, const gpc_bbox &b);
 
 } // namespace gpc
