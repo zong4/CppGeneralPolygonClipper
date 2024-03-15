@@ -32,8 +32,6 @@ Copyright: (C) Advanced Interfaces Group,
 
 #pragma once
 
-#include <algorithm>
-
 #include "geometry/gpc_lmt.hpp"
 #include "geometry/gpc_tristrip.hpp"
 #include "utilis/gpc_constants.hpp"

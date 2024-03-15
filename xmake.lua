@@ -4,7 +4,11 @@ set_languages("c++20")
 add_cxxflags("/EHsc")
 add_mxflags("-Wno-error=deprecated-declarations", "-fno-strict-aliasing", "-Wno-error=expansion-to-defined")
 
+add_requires("gtest")
+
 target("cpp_gpc")
+    add_packages("gtest")
+
     set_kind("binary")
     add_files("src/*.cpp")
     add_files("src/**/*.cpp")

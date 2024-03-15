@@ -1,5 +1,28 @@
 ﻿#include "gpc_polygon.hpp"
 
+gpc::gpc_polygon::gpc_polygon(
+    const std::vector<std::vector<gpc_vertex>> &in_contour,
+    const std::vector<bool> &in_hole) {
+  for (int i = 0; i < in_contour.size(); ++i) {
+    contour.push_back(gpc_vertex_list(in_contour[i]));
+    hole.push_back(in_hole[i]);
+  }
+}
+
+bool gpc::gpc_polygon::operator==(const gpc::gpc_polygon &rhs) const {
+  if (num_contours() != rhs.num_contours()) {
+    return false;
+  }
+
+  for (int i = 0; i < num_contours(); ++i) {
+    if (hole[i] != rhs.hole[i] || contour[i] != rhs.contour[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 std::istream &gpc::operator>>(std::istream &is, gpc::gpc_polygon &polygon) {
   int num_contours;
   is >> num_contours;
@@ -127,4 +150,43 @@ void gpc::minimax_test(gpc::gpc_polygon &subj, gpc::gpc_polygon &clip,
     minimax_test_int(subj, clip);
     break;
   }
+}
+
+bool gpc::equal_sort(const gpc::gpc_polygon &subj,
+                     const gpc::gpc_polygon &clip) {
+  if (subj.num_contours() != clip.num_contours()) {
+    return false;
+  }
+
+  for (int i = 0; i < subj.num_contours(); ++i) {
+    if (subj.hole[i] != clip.hole[i]) {
+      return false;
+    }
+
+    std::vector<gpc_vertex> subj_vertex = subj.contour[i].vertex;
+    std::vector<gpc_vertex> clip_vertex = clip.contour[i].vertex;
+
+    std::sort(subj_vertex.begin(), subj_vertex.end(),
+              [](const gpc_vertex &a, const gpc_vertex &b) {
+                if (a.x != b.x)
+                  return a.x < b.x;
+                else
+                  return a.y < b.y;
+              });
+    std::sort(clip_vertex.begin(), clip_vertex.end(),
+              [](const gpc_vertex &a, const gpc_vertex &b) {
+                if (a.x != b.x)
+                  return a.x < b.x;
+                else
+                  return a.y < b.y;
+              });
+
+    for (int j = 0; j < subj_vertex.size(); ++j) {
+      if (subj_vertex[j] != clip_vertex[j]) {
+        return false;
+      }
+    }
+  }
+
+  return true;
 }

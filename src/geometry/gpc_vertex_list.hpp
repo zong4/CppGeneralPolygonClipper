@@ -21,6 +21,8 @@ public:
 
   inline int num_vertices() const { return vertex.size(); }
 
+  bool operator==(const gpc_vertex_list &rhs) const;
+
   friend std::istream &operator>>(std::istream &is,
                                   gpc_vertex_list &vertex_list);
   friend std::ostream &operator<<(std::ostream &os,

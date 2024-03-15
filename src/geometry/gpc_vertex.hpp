@@ -16,6 +16,10 @@ public:
   gpc_vertex(double in_x, double in_y) : x(in_x), y(in_y) {}
   ~gpc_vertex() = default;
 
+  inline bool operator==(const gpc_vertex &rhs) const {
+    return (x == rhs.x) && (y == rhs.y);
+  }
+
   friend std::istream &operator>>(std::istream &is, gpc_vertex &vertex) {
     is >> vertex.x >> vertex.y;
     return is;

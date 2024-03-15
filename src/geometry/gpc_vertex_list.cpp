@@ -1,5 +1,19 @@
 #include "gpc_vertex_list.hpp"
 
+bool gpc::gpc_vertex_list::operator==(const gpc::gpc_vertex_list &rhs) const {
+  if (num_vertices() != rhs.num_vertices()) {
+    return false;
+  }
+
+  for (int i = 0; i < num_vertices(); ++i) {
+    if (vertex[i] != rhs.vertex[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 std::istream &gpc::operator>>(std::istream &is,
                               gpc::gpc_vertex_list &vertex_list) {
   int num_vertices;
