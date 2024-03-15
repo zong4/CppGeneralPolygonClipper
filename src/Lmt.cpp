@@ -1,38 +1,5 @@
 ﻿#include "Lmt.hpp"
 
-void gpc::insert_bound(gpc::edge_node **b, gpc::edge_node *e) {
-  edge_node *existing_bound;
-
-  if (!*b) {
-    /* Link node e to the tail of the list */
-    *b = e;
-  } else {
-    /* Do primary sort on the x field */
-    if (e->bot.x < (*b)->bot.x) {
-      /* Insert a new node mid-list */
-      existing_bound = *b;
-      *b = e;
-      (*b)->next_bound = existing_bound;
-    } else {
-      if (e->bot.x == (*b)->bot.x) {
-        /* Do secondary sort on the dx field */
-        if (e->dx < (*b)->dx) {
-          /* Insert a new node mid-list */
-          existing_bound = *b;
-          *b = e;
-          (*b)->next_bound = existing_bound;
-        } else {
-          /* Head further down the list */
-          insert_bound(&((*b)->next_bound), e);
-        }
-      } else {
-        /* Head further down the list */
-        insert_bound(&((*b)->next_bound), e);
-      }
-    }
-  }
-}
-
 gpc::Lmt::~Lmt() {
   for (auto &&edge_table : edge_tables) {
     delete edge_table;
@@ -98,29 +65,35 @@ void gpc::Lmt::build_lmt(gpc_polygon *p, int type, gpc_op op) {
           int v = min;
           for (int i = 0; i < num_edges; ++i) {
             edge_table[e_index + i].xb = edge_table[v].vertex.x;
-            edge_table[e_index + i].bot.x = edge_table[v].vertex.x;
-            edge_table[e_index + i].bot.y = edge_table[v].vertex.y;
+            edge_table[e_index + i].bot = edge_table[v].vertex;
 
             v = NEXT_INDEX(v, cnt_vertices);
 
-            edge_table[e_index + i].top.x = edge_table[v].vertex.x;
-            edge_table[e_index + i].top.y = edge_table[v].vertex.y;
+            edge_table[e_index + i].top = edge_table[v].vertex;
+
             edge_table[e_index + i].dx =
                 (edge_table[v].vertex.x - edge_table[e_index + i].bot.x) /
                 (edge_table[e_index + i].top.y - edge_table[e_index + i].bot.y);
+
             edge_table[e_index + i].type = type;
+
             edge_table[e_index + i].outp[ABOVE] = nullptr;
             edge_table[e_index + i].outp[BELOW] = nullptr;
+
             edge_table[e_index + i].next = nullptr;
             edge_table[e_index + i].prev = nullptr;
+
             edge_table[e_index + i].succ =
                 ((num_edges > 1) && (i < (num_edges - 1)))
                     ? &(edge_table[e_index + i + 1])
                     : nullptr;
+
             edge_table[e_index + i].pred = ((num_edges > 1) && (i > 0))
                                                ? &(edge_table[e_index + i - 1])
                                                : nullptr;
+
             edge_table[e_index + i].next_bound = nullptr;
+
             edge_table[e_index + i].bside[CLIP] =
                 (op == gpc_op::GPC_DIFF) ? RIGHT : LEFT;
             edge_table[e_index + i].bside[SUBJ] = LEFT;
@@ -155,8 +128,7 @@ void gpc::Lmt::build_lmt(gpc_polygon *p, int type, gpc_op op) {
           int v = min;
           for (int i = 0; i < num_edges; i++) {
             edge_table[e_index + i].xb = edge_table[v].vertex.x;
-            edge_table[e_index + i].bot.x = edge_table[v].vertex.x;
-            edge_table[e_index + i].bot.y = edge_table[v].vertex.y;
+            edge_table[e_index + i].bot = edge_table[v].vertex;
 
             v = PREV_INDEX(v, cnt_vertices);
 

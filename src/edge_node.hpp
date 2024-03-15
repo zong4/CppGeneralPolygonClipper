@@ -30,4 +30,6 @@ public:
   ~edge_node() = default;
 };
 
+void insert_bound(edge_node **b, edge_node *e);
+
 } // namespace gpc

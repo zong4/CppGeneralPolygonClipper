@@ -497,14 +497,14 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon *subj, gpc_polygon *clip,
         /* Add edges starting at this local minimum to the AET */
         for (auto edge = lmt.lmt_list.front().second; edge;
              edge = edge->next_bound) {
-          add_edge_to_aet(&aet, edge, nullptr);
+          add_edge_to_aet(&aet, edge, nullptr); // TODO:
         }
 
         lmt.lmt_list.pop_front();
       }
     }
 
-    /* Set dummy previous x value */
+    /* 设置虚拟的前一个 x 值 */
     px = -DBL_MAX;
 
     /* Create bundles within AET */

@@ -9,8 +9,6 @@
 
 namespace gpc {
 
-void insert_bound(edge_node **b, edge_node *e);
-
 class Lmt {
 public:
   std::vector<double> sbtree;
