@@ -34,10 +34,10 @@ Copyright: (C) Advanced Interfaces Group,
 
 #include <algorithm>
 
-#include "gpc_constants.hpp"
-#include "gpc_lmt.hpp"
-#include "gpc_math.hpp"
-#include "gpc_tristrip.hpp"
+#include "geometry/gpc_lmt.hpp"
+#include "geometry/gpc_tristrip.hpp"
+#include "utilis/gpc_constants.hpp"
+#include "utilis/gpc_math.hpp"
 
 namespace gpc {
 

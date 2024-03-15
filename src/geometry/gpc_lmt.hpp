@@ -3,9 +3,10 @@
 #include <list>
 #include <vector>
 
+#include "../utilis/gpc_macros.hpp"
 #include "gpc_polygon.hpp"
-#include "gpc_utilis.hpp"
 #include "lmt_node.hpp"
+
 
 namespace gpc {
 

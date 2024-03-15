@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gpc_enum.hpp"
+#include "../utilis/gpc_enum.hpp"
 #include "gpc_vertex_list.hpp"
 
 namespace gpc {

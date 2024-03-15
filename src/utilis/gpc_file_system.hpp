@@ -2,7 +2,7 @@
 
 #include <fstream>
 
-#include "gpc_polygon.hpp"
+#include "../geometry/gpc_polygon.hpp"
 
 namespace gpc {
 
