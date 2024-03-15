@@ -3,7 +3,6 @@
 #include "gpc.hpp"
 #include "utilis/gpc_file_system.hpp"
 
-
 int main(int argc, char **argv) {
   gpc::gpc_polygon subject_polygon;
   gpc::gpc_polygon clip_polygon;

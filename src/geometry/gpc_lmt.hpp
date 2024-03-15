@@ -7,12 +7,11 @@
 #include "gpc_polygon.hpp"
 #include "lmt_node.hpp"
 
-
 namespace gpc {
 
 class gpc_lmt {
 public:
-  std::vector<double> sbtree; // TODO: 优化
+  std::vector<double> sbtree; // TODO: 优化 sbtree
   std::list<lmt_node> lmt_list;
   std::vector<edge_node *> edge_tables;
 

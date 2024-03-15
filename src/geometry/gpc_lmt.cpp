@@ -33,7 +33,7 @@ void gpc::gpc_lmt::build_lmt(const gpc_polygon &p, int type, gpc_op op) {
     if (p.contour[c].is_contributing) {
       /* Perform contour optimisation */
       int cnt_vertices = 0;
-      for (int i = 0; i < p.contour[c].num_vertices(); ++i)
+      for (int i = 0; i < p.contour[c].num_vertices(); ++i) {
         if (optimal(p.contour[c].vertex, i, p.contour[c].num_vertices())) {
           edge_table[cnt_vertices].vertex = p.contour[c].vertex[i];
           ++cnt_vertices;
@@ -41,6 +41,7 @@ void gpc::gpc_lmt::build_lmt(const gpc_polygon &p, int type, gpc_op op) {
           /* Record vertex in the scanbeam table */
           sbtree.push_back(p.contour[c].vertex[i].y);
         }
+      }
 
       /* Do the contour forward pass */
       for (int min = 0; min < cnt_vertices; ++min) {
@@ -114,7 +115,7 @@ void gpc::gpc_lmt::build_lmt(const gpc_polygon &p, int type, gpc_op op) {
           int max = prev_index(min, cnt_vertices);
 
           while (not_rmax(edge_table, max, cnt_vertices)) {
-            num_edges++;
+            ++num_edges;
             max = prev_index(max, cnt_vertices);
           }
 
@@ -132,22 +133,30 @@ void gpc::gpc_lmt::build_lmt(const gpc_polygon &p, int type, gpc_op op) {
 
             edge_table[e_index + i].top.x = edge_table[v].vertex.x;
             edge_table[e_index + i].top.y = edge_table[v].vertex.y;
+
             edge_table[e_index + i].dx =
                 (edge_table[v].vertex.x - edge_table[e_index + i].bot.x) /
                 (edge_table[e_index + i].top.y - edge_table[e_index + i].bot.y);
+
             edge_table[e_index + i].type = type;
+
             edge_table[e_index + i].outp[ABOVE] = nullptr;
             edge_table[e_index + i].outp[BELOW] = nullptr;
+
             edge_table[e_index + i].next = nullptr;
             edge_table[e_index + i].prev = nullptr;
+
             edge_table[e_index + i].succ =
                 ((num_edges > 1) && (i < (num_edges - 1)))
                     ? &(edge_table[e_index + i + 1])
                     : nullptr;
+
             edge_table[e_index + i].pred = ((num_edges > 1) && (i > 0))
                                                ? &(edge_table[e_index + i - 1])
                                                : nullptr;
+
             edge_table[e_index + i].next_bound = nullptr;
+
             edge_table[e_index + i].bside[CLIP] =
                 (op == gpc_op::GPC_DIFF) ? RIGHT : LEFT;
             edge_table[e_index + i].bside[SUBJ] = LEFT;
