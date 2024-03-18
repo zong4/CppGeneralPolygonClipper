@@ -17,14 +17,14 @@ namespace gpc {
 #define TRUE 1
 #endif
 
-#define LEFT 0
-#define RIGHT 1
+constexpr bool LEFT = 0;
+constexpr bool RIGHT = 1;
 
-#define ABOVE 0
-#define BELOW 1
+constexpr bool ABOVE = 0;
+constexpr bool BELOW = 1;
 
-#define CLIP 0
-#define SUBJ 1
+constexpr bool CLIP = 0;
+constexpr bool SUBJ = 1;
 
 #define INVERT_TRISTRIPS FALSE
 

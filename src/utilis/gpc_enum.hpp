@@ -17,23 +17,24 @@ enum class gpc_op {
 */
 
 /* Edge intersection classes         */
-enum vertex_type {
-  NUL, /* Empty non-intersection            */
-  EMX, /* External maximum                  */
-  ELI, /* External left intermediate        */
-  TED, /* Top edge                          */
-  ERI, /* External right intermediate       */
-  RED, /* Right edge                        */
-  IMM, /* Internal maximum and minimum      */
-  IMN, /* Internal minimum                  */
-  EMN, /* External minimum                  */
-  EMM, /* External maximum and minimum      */
-  LED, /* Left edge                         */
-  ILI, /* Internal left intermediate        */
-  BED, /* Bottom edge                       */
-  IRI, /* Internal right intermediate       */
-  IMX, /* Internal maximum                  */
-  FUL  /* Full non-intersection             */
+// bl br tl tr
+enum class vertex_type : int {
+  NUL, // 空的非交点 0000
+  EMX, // 外部最大值 0001
+  ELI, // 外部左中间值 0010
+  TED, // 顶边 0011
+  ERI, // 外部右中间值 0100
+  RED, // 右边 0101
+  IMM, // 内部最大值和最小值 0110
+  IMN, // 内部最小值 0111
+  EMN, // 外部最小值 1000
+  EMM, // 外部最大值和最小值 1001
+  LED, // 左边 1010
+  ILI, // 内部左中间值 1011
+  BED, // 底边 1100
+  IRI, // 内部右中间值 1101
+  IMX, // 内部最大值 1110
+  FUL  // 完全非交点 1111
 };
 
 // 不改成 enum class，支持隐转

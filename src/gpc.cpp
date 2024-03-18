@@ -419,6 +419,7 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
     return;
   }
 
+  // TODO: 无自相交
   if (clip.num_contours() == 0) {
     if (op == gpc_op::GPC_INT) {
       return;
@@ -462,22 +463,21 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
     parity[CLIP] = RIGHT;
 
   it_node *it = nullptr, *intersect;
-  edge_node *edge, *prev_edge, *next_edge, *succ_edge, *e0, *e1;
+  edge_node *edge;
   edge_node *aet = nullptr;
-  polygon_node *out_poly = nullptr, *p, *q, *poly, *npoly, *cf = nullptr;
+  polygon_node *out_poly = nullptr, *p, *q, *poly, *npoly;
   vertex_node *vtx, *nv;
-  h_state horiz[2];
-  int in[2], exists[2];
+  int in[2];
   int c, v, contributing;
-  int vclass, bl, br, tl, tr;
-  double xb, px, ix, iy;
+  int bl, br, tl, tr;
+  double xb, ix, iy;
 
   /* 处理每个扫描线 */
   int scanbeam = 0;
-  double yb, yt, dy;
+  polygon_node *cf = nullptr; // TODO:
   while (scanbeam < sbt.size()) {
-    /* Set yb and yt to the bottom and top of the scanbeam */
-    yb = sbt[scanbeam++];
+    /* 设置扫描线的底部和顶部 */
+    double yb = sbt[scanbeam++];
 
     while (scanbeam < sbt.size()) {
       if (sbt[scanbeam] == yb)
@@ -486,12 +486,12 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
         break;
     }
 
-    yt = sbt[scanbeam];
-    dy = yt - yb;
+    double yt = sbt[scanbeam];
+    double dy = yt - yb;
 
-    /* === SCANBEAM BOUNDARY PROCESSING ================================ */
+    /* === 扫描线边界处理 ================================ */
 
-    /* If LMT node corresponding to yb exists */
+    /* 将从这个局部最小值开始的边添加到 AET 中 */
     if (!lmt.lmt_list.empty()) {
       if (lmt.lmt_list.front().first == yb) {
         /* Add edges starting at this local minimum to the AET */
@@ -500,29 +500,29 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
           add_edge_to_aet(&aet, edge, nullptr); // TODO:
         }
 
-        lmt.lmt_list.pop_front();
+        lmt.lmt_list.pop_front(); // 移动到下一个局部最小值
       }
     }
 
     /* 设置虚拟的前一个 x 值 */
-    px = -DBL_MAX;
+    double px = -DBL_MAX;
 
-    /* Create bundles within AET */
-    e0 = aet;
-    e1 = aet;
-
-    /* Set up bundle fields of first edge */
-    aet->bundle[ABOVE][aet->type] = (aet->top.y != yb);
+    /* 在 AET 中创建捆绑 */
+    /* 为第一条边设置捆绑字段 */
+    aet->bundle[ABOVE][aet->type] =
+        (aet->top.y != yb); // 如果边的顶部不在当前扫描线上，则设置为 TRUE
     aet->bundle[ABOVE][!aet->type] = FALSE;
     aet->bstate[ABOVE] = bundle_state::UNBUNDLED;
 
-    for (next_edge = aet->next; next_edge; next_edge = next_edge->next) {
+    edge_node *e0 = aet;
+    for (edge_node *next_edge = aet->next; next_edge;
+         next_edge = next_edge->next) {
       /* Set up bundle fields of next edge */
       next_edge->bundle[ABOVE][next_edge->type] = (next_edge->top.y != yb);
       next_edge->bundle[ABOVE][!next_edge->type] = FALSE;
       next_edge->bstate[ABOVE] = bundle_state::UNBUNDLED;
 
-      /* Bundle edges above the scanbeam boundary if they coincide */
+      /* 如果边在扫描线边界以上且与前一条边重合，则捆绑边 */
       if (next_edge->bundle[ABOVE][next_edge->type]) {
         if (equal(e0->xb, next_edge->xb) && equal(e0->dx, next_edge->dx) &&
             (e0->top.y != yb)) {
@@ -535,14 +535,15 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
           e0->bundle[ABOVE][SUBJ] = FALSE;
           e0->bstate[ABOVE] = bundle_state::BUNDLE_TAIL;
         }
+
         e0 = next_edge;
       }
     }
 
-    horiz[CLIP] = h_state::NH;
-    horiz[SUBJ] = h_state::NH;
-
-    /* Process each edge at this scanbeam boundary */
+    int exists[2];
+    h_state horiz[2] = {h_state::NH,
+                        h_state::NH}; // 设置多边形的水平状态为非水平
+    /* 在此扫描线边界处理每条边 */
     for (edge = aet; edge; edge = edge->next) {
       exists[CLIP] =
           edge->bundle[ABOVE][CLIP] + (edge->bundle[BELOW][CLIP] << 1);
@@ -550,7 +551,7 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
           edge->bundle[ABOVE][SUBJ] + (edge->bundle[BELOW][SUBJ] << 1);
 
       if (exists[CLIP] || exists[SUBJ]) {
-        /* Set bundle side */
+        /* 设置边的边界侧 */
         edge->bside[CLIP] = parity[CLIP];
         edge->bside[SUBJ] = parity[SUBJ];
 
@@ -601,11 +602,11 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
           break;
         }
 
-        /* Update parity */
+        /* 更新奇偶性 */
         parity[CLIP] ^= edge->bundle[ABOVE][CLIP];
         parity[SUBJ] ^= edge->bundle[ABOVE][SUBJ];
 
-        /* Update horizontal state */
+        /* 更新水平状态 */
         if (exists[CLIP])
           horiz[CLIP] = next_h_state[horiz[CLIP]]
                                     [((exists[CLIP] - 1) << 1) + parity[CLIP]];
@@ -613,19 +614,20 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
           horiz[SUBJ] = next_h_state[horiz[SUBJ]]
                                     [((exists[SUBJ] - 1) << 1) + parity[SUBJ]];
 
-        vclass = tr + (tl << 1) + (br << 2) + (bl << 3);
+        vertex_type vclass =
+            static_cast<vertex_type>(tr + (tl << 1) + (br << 2) + (bl << 3));
 
         if (contributing) {
           xb = edge->xb;
 
           switch (vclass) {
-          case vertex_type::EMN:
-          case vertex_type::IMN:
+          case vertex_type::EMN: // 外部最小值
+          case vertex_type::IMN: // 内部最小值
             add_local_min(&out_poly, edge, xb, yb);
             px = xb;
             cf = edge->outp[ABOVE];
             break;
-          case vertex_type::ERI:
+          case vertex_type::ERI: // 外部右中间值
             if (xb != px) {
               add_right(cf, xb, yb);
               px = xb;
@@ -633,12 +635,12 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
             edge->outp[ABOVE] = cf;
             cf = nullptr;
             break;
-          case vertex_type::ELI:
+          case vertex_type::ELI: // 外部左中间值
             add_left(edge->outp[BELOW], xb, yb);
             px = xb;
             cf = edge->outp[BELOW];
             break;
-          case vertex_type::EMX:
+          case vertex_type::EMX: // 外部最大值
             if (xb != px) {
               add_left(cf, xb, yb);
               px = xb;
@@ -646,7 +648,7 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
             merge_right(cf, edge->outp[BELOW], out_poly);
             cf = nullptr;
             break;
-          case vertex_type::ILI:
+          case vertex_type::ILI: // 内部左中间值
             if (xb != px) {
               add_left(cf, xb, yb);
               px = xb;
@@ -654,13 +656,13 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
             edge->outp[ABOVE] = cf;
             cf = nullptr;
             break;
-          case vertex_type::IRI:
+          case vertex_type::IRI: // 内部右中间值
             add_right(edge->outp[BELOW], xb, yb);
             px = xb;
             cf = edge->outp[BELOW];
             edge->outp[BELOW] = nullptr;
             break;
-          case vertex_type::IMX:
+          case vertex_type::IMX: // 内部最大值
             if (xb != px) {
               add_right(cf, xb, yb);
               px = xb;
@@ -669,7 +671,7 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
             cf = nullptr;
             edge->outp[BELOW] = nullptr;
             break;
-          case vertex_type::IMM:
+          case vertex_type::IMM: // 内部最大值和最小值
             if (xb != px) {
               add_right(cf, xb, yb);
               px = xb;
@@ -679,7 +681,7 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
             add_local_min(&out_poly, edge, xb, yb);
             cf = edge->outp[ABOVE];
             break;
-          case vertex_type::EMM:
+          case vertex_type::EMM: // 外部最大值和最小值
             if (xb != px) {
               add_left(cf, xb, yb);
               px = xb;
@@ -689,13 +691,13 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
             add_local_min(&out_poly, edge, xb, yb);
             cf = edge->outp[ABOVE];
             break;
-          case vertex_type::LED:
+          case vertex_type::LED: // 左边界
             if (edge->bot.y == yb)
               add_left(edge->outp[BELOW], xb, yb);
             edge->outp[ABOVE] = edge->outp[BELOW];
             px = xb;
             break;
-          case vertex_type::RED:
+          case vertex_type::RED: // 右边界
             if (edge->bot.y == yb)
               add_right(edge->outp[BELOW], xb, yb);
             edge->outp[ABOVE] = edge->outp[BELOW];
@@ -711,8 +713,8 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
     /* Delete terminating edges from the AET, otherwise compute xt */
     for (edge = aet; edge; edge = edge->next) {
       if (edge->top.y == yb) {
-        prev_edge = edge->prev;
-        next_edge = edge->next;
+        edge_node *prev_edge = edge->prev;
+        edge_node *next_edge = edge->next;
         if (prev_edge)
           prev_edge->next = next_edge;
         else
@@ -746,7 +748,7 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
       /* Process each node in the intersection table */
       for (intersect = it; intersect; intersect = intersect->next) {
         e0 = intersect->ie[0];
-        e1 = intersect->ie[1];
+        edge_node *e1 = intersect->ie[1];
 
         /* Only generate output for contributing intersections */
         if ((e0->bundle[ABOVE][CLIP] || e0->bundle[ABOVE][SUBJ]) &&
@@ -800,7 +802,8 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
             break;
           }
 
-          vclass = tr + (tl << 1) + (br << 2) + (bl << 3);
+          vertex_type vclass =
+              static_cast<vertex_type>(tr + (tl << 1) + (br << 2) + (bl << 3));
 
           switch (vclass) {
           case vertex_type::EMN:
@@ -892,9 +895,9 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
       } /* End of IT loop*/
 
       /* Prepare for next scanbeam */
-      for (edge = aet; edge; edge = next_edge) {
-        next_edge = edge->next;
-        succ_edge = edge->succ;
+      for (edge = aet; edge; edge = edge->next) {
+        edge_node *next_edge = edge->next;
+        edge_node *succ_edge = edge->succ;
 
         if ((edge->top.y == yt) && succ_edge) {
           /* Replace AET edge by its successor */
@@ -902,7 +905,7 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
           succ_edge->bstate[BELOW] = edge->bstate[ABOVE];
           succ_edge->bundle[BELOW][CLIP] = edge->bundle[ABOVE][CLIP];
           succ_edge->bundle[BELOW][SUBJ] = edge->bundle[ABOVE][SUBJ];
-          prev_edge = edge->prev;
+          edge_node *prev_edge = edge->prev;
           if (prev_edge)
             prev_edge->next = succ_edge;
           else
@@ -940,9 +943,11 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
         v = result.contour[c].vertex.size() - 1;
         for (vtx = poly->proxy->v[LEFT]; vtx; vtx = nv) {
           nv = vtx->next;
+
           result.contour[c].vertex[v].x = vtx->x;
           result.contour[c].vertex[v].y = vtx->y;
           delete (vtx);
+
           --v;
         }
         ++c;

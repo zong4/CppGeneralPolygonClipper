@@ -13,6 +13,8 @@ target("cpp_gpc")
     add_files("src/*.cpp")
     add_files("src/**/*.cpp")
 
+-- xmake project -k vsxmake -a x64
+
 --
 -- If you want to known more usage about xmake, please see https://xmake.io
 --

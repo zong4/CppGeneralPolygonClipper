@@ -2,6 +2,9 @@
 .vscode/
 .history/
 
+Visual Studio cache
+vsxmake**/
+
 # Xmake cache
 .xmake/
 build/
