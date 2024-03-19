@@ -16,7 +16,7 @@ public:
   double dx = 0.0;   /* Change in x for a unit y increase */
   bool type = false; /* Clip / subject edge flag          */
   int bundle[2][2] = {{false, false}, {false, false}}; /* Bundle edge flags */
-  int bside[2]; /* Bundle left / right indicators    */
+  int bside[2] = {false, false}; /* Bundle left / right indicators    */
   bundle_state bstate[2] = {bundle_state::UNBUNDLED,
                             bundle_state::UNBUNDLED}; /* Edge bundle state */
   polygon_node *outp[2];         /* Output polygon / tristrip pointer */
