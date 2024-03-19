@@ -23,7 +23,10 @@ public:
   void build_lmt(const gpc_polygon &p, bool type, gpc_op op);
 
 private:
-  // edge_node **bound_list(double y);
+  void set_edge_table(int min, int num_edges,
+                      const std::vector<gpc_vertex> &vertex_table, bool type,
+                      gpc_op op, bool is_reverse);
+
   void insert_bound(double y, const gpc_edge_node &e);
 };
 
