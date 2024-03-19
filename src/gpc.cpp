@@ -2,13 +2,6 @@
 
 namespace gpc {
 
-typedef struct it_shape /* Intersection table                */
-{
-  gpc_edge_node *ie[2];            /* Intersecting edge (bundle) pair   */
-  gpc_vertex point;                /* Point of intersection             */
-  struct it_shape *next = nullptr; /* The next intersection table node  */
-} it_node;
-
 typedef struct st_shape /* Sorted edge table                 */
 {
   gpc_edge_node *edge;   /* Pointer to AET edge               */
@@ -43,14 +36,14 @@ static void add_edge_to_aet(gpc_edge_node **aet, gpc_edge_node *edge,
     edge->next = nullptr;
   } else {
     /* Do primary sort on the xb field */
-    if (edge->xb < (*aet)->xb) {
+    if (edge->xb() < (*aet)->xb()) {
       /* Insert edge here (before the AET edge) */
       edge->prev = prev;
       edge->next = *aet;
       (*aet)->prev = edge;
       *aet = edge;
     } else {
-      if (edge->xb == (*aet)->xb) {
+      if (edge->xb() == (*aet)->xb()) {
         /* Do secondary sort on the dx field */
         if (edge->dx < (*aet)->dx) {
           /* Insert edge here (before the AET edge) */
@@ -107,27 +100,27 @@ static void add_st_edge(st_node **st, it_node **it, gpc_edge_node *edge,
     /* Append edge onto the tail end of the ST */
     MALLOC(*st, sizeof(st_node), "ST insertion", st_node);
     (*st)->edge = edge;
-    (*st)->xb = edge->xb;
-    (*st)->xt = edge->xt;
+    (*st)->xb = edge->xb();
+    (*st)->xt = edge->xt();
     (*st)->dx = edge->dx;
     (*st)->prev = nullptr;
   } else {
-    den = ((*st)->xt - (*st)->xb) - (edge->xt - edge->xb);
+    den = ((*st)->xt - (*st)->xb) - (edge->xt() - edge->xb());
 
     /* If new edge and ST edge don't cross */
-    if ((edge->xt >= (*st)->xt) || (edge->dx == (*st)->dx) ||
+    if ((edge->xt() >= (*st)->xt) || (edge->dx == (*st)->dx) ||
         (fabs(den) <= DBL_EPSILON)) {
       /* No intersection - insert edge here (before the ST edge) */
       existing_node = *st;
       MALLOC(*st, sizeof(st_node), "ST insertion", st_node);
       (*st)->edge = edge;
-      (*st)->xb = edge->xb;
-      (*st)->xt = edge->xt;
+      (*st)->xb = edge->xb();
+      (*st)->xt = edge->xt();
       (*st)->dx = edge->dx;
       (*st)->prev = existing_node;
     } else {
       /* Compute intersection between new edge and ST edge */
-      r = (edge->xb - (*st)->xb) / den;
+      r = (edge->xb() - (*st)->xb) / den;
       x = (*st)->xb + r * ((*st)->xt - (*st)->xb);
       y = r * dy;
 
@@ -525,7 +518,7 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
 
       /* 如果边在扫描线边界以上且与前一条边重合，则捆绑边 */
       if (next_edge->bundle[ABOVE][next_edge->type]) {
-        if (equal(e0->xb, next_edge->xb) && equal(e0->dx, next_edge->dx) &&
+        if (equal(e0->xb(), next_edge->xb()) && equal(e0->dx, next_edge->dx) &&
             (e0->top.y != yb)) {
           next_edge->bundle[ABOVE][next_edge->type] ^=
               e0->bundle[ABOVE][next_edge->type];
@@ -619,7 +612,7 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
             static_cast<vertex_type>(tr + (tl << 1) + (br << 2) + (bl << 3));
 
         if (contributing) {
-          xb = edge->xb;
+          xb = edge->xb();
 
           switch (vclass) {
           case vertex_type::EMN: // 外部最小值
@@ -711,7 +704,7 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
       }     /* End of edge exists conditional */
     }       /* End of AET loop */
 
-    /* Delete terminating edges from the AET, otherwise compute xt */
+    /* Delete terminating edges from the AET, otherwise compute xt() */
     for (edge = aet; edge; edge = edge->next) {
       if (edge->top.y == yb) {
         gpc_edge_node *prev_edge = edge->prev;
@@ -734,10 +727,11 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
           }
         }
       } else {
-        if (edge->top.y == yt)
-          edge->xt = edge->top.x;
-        else
-          edge->xt = edge->bot.x + edge->dx * (yt - edge->bot.y);
+        if (edge->top.y == yt) {
+          edge->xt(edge->top.x);
+        } else {
+          edge->xt(edge->bot.x + edge->dx * (yt - edge->bot.y));
+        }
       }
     }
 
@@ -897,22 +891,24 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
 
       /* Prepare for next scanbeam */
       for (edge = aet; edge; edge = edge->next) {
-        gpc_edge_node *next_edge = edge->next;
         gpc_edge_node *succ_edge = edge->succ;
-
         if ((edge->top.y == yt) && succ_edge) {
           /* Replace AET edge by its successor */
           succ_edge->outp[BELOW] = edge->outp[ABOVE];
           succ_edge->bstate[BELOW] = edge->bstate[ABOVE];
           succ_edge->bundle[BELOW][CLIP] = edge->bundle[ABOVE][CLIP];
           succ_edge->bundle[BELOW][SUBJ] = edge->bundle[ABOVE][SUBJ];
+
           gpc_edge_node *prev_edge = edge->prev;
           if (prev_edge)
             prev_edge->next = succ_edge;
           else
             aet = succ_edge;
+
+          gpc_edge_node *next_edge = edge->next;
           if (next_edge)
             next_edge->prev = succ_edge;
+
           succ_edge->prev = prev_edge;
           succ_edge->next = next_edge;
         } else {
@@ -921,7 +917,8 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
           edge->bstate[BELOW] = edge->bstate[ABOVE];
           edge->bundle[BELOW][CLIP] = edge->bundle[ABOVE][CLIP];
           edge->bundle[BELOW][SUBJ] = edge->bundle[ABOVE][SUBJ];
-          edge->xb = edge->xt;
+
+          edge->xb(edge->xt());
         }
         edge->outp[ABOVE] = nullptr;
       }

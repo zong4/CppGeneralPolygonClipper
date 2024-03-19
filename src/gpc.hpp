@@ -34,6 +34,7 @@ Copyright: (C) Advanced Interfaces Group,
 
 #include "geometry/gpc_lmt.hpp"
 #include "geometry/gpc_tristrip.hpp"
+#include "geometry/it_node.hpp"
 #include "utilis/gpc_constants.hpp"
 #include "utilis/gpc_math.hpp"
 

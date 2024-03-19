@@ -91,13 +91,15 @@ void gpc::gpc_lmt::set_edge_table(int min, int num_edges,
 
   int v = min;
   for (int i = 0; i < num_edges; ++i) {
-    edge_table[min + i].xb = vertex_table[v].x;
     edge_table[min + i].bot = vertex_table[v];
 
     v = is_reverse ? prev_index(v, vertex_table.size())
                    : next_index(v, vertex_table.size());
 
     edge_table[min + i].top = vertex_table[v];
+
+    edge_table[min + i].xb(edge_table[min + i].bot.x);
+    edge_table[min + i].xt(edge_table[min + i].top.x);
 
     edge_table[min + i].dx = (vertex_table[v].x - vertex_table[min + i].x) /
                              (vertex_table[v].y - vertex_table[min + i].y);

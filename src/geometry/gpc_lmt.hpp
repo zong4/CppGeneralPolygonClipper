@@ -18,6 +18,7 @@ public:
   std::vector<gpc_edge_node *> edge_tables;
   // std::vector<std::vector<gpc_edge_node>> edge_tables;
 
+public:
   gpc_lmt() = default;
   ~gpc_lmt();
 
