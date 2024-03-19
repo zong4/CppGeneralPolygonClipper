@@ -24,12 +24,11 @@ public:
   edge_node *next = nullptr; /* Next edge in the AET              */
   edge_node *pred = nullptr; /* Edge connected at the lower end   */
   edge_node *succ = nullptr; /* Edge connected at the upper end   */
-  // edge_node *next_bound = nullptr; /* Pointer to next bound in LMT */
 
   edge_node() = default;
   ~edge_node() = default;
 };
 
-// void insert_bound(edge_node **b, edge_node *e);
+typedef std::list<edge_node> edge_list;
 
 } // namespace gpc
