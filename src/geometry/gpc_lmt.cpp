@@ -14,7 +14,7 @@ gpc::gpc_lmt::~gpc_lmt() {
   sbtree.clear();
 }
 
-void gpc::gpc_lmt::build_lmt(const gpc_polygon &p, int type, gpc_op op) {
+void gpc::gpc_lmt::build_lmt(const gpc_polygon &p, bool type, gpc_op op) {
   int total_vertices = 0;
   for (int c = 0; c < p.num_contours(); ++c) {
     for (int i = 0; i < p.contour[c].num_vertices(); ++i) {
@@ -23,6 +23,8 @@ void gpc::gpc_lmt::build_lmt(const gpc_polygon &p, int type, gpc_op op) {
       }
     }
   }
+
+  std::vector<gpc_vertex> vertex_table;
 
   /* Create the entire input polygon edge table in one go */
   gpc_edge_node *edge_table =
@@ -35,7 +37,9 @@ void gpc::gpc_lmt::build_lmt(const gpc_polygon &p, int type, gpc_op op) {
       int cnt_vertices = 0;
       for (int i = 0; i < p.contour[c].num_vertices(); ++i) {
         if (optimal(p.contour[c].vertex, i, p.contour[c].num_vertices())) {
-          edge_table[cnt_vertices].vertex = p.contour[c].vertex[i];
+          vertex_table.push_back(p.contour[c].vertex[i]);
+
+          // edge_table[cnt_vertices].vertex = p.contour[c].vertex[i];
           ++cnt_vertices;
 
           /* Record vertex in the scanbeam table */
@@ -46,12 +50,12 @@ void gpc::gpc_lmt::build_lmt(const gpc_polygon &p, int type, gpc_op op) {
       /* Do the contour forward pass */
       for (int min = 0; min < cnt_vertices; ++min) {
         /* If a forward local minimum... */
-        if (fwd_min(edge_table, min, cnt_vertices)) {
+        if (fwd_min(vertex_table, min, cnt_vertices)) {
           /* Search for the next local maximum... */
           int num_edges = 1;
           int max = next_index(min, cnt_vertices);
 
-          while (not_fmax(edge_table, max, cnt_vertices)) {
+          while (not_fmax(vertex_table, max, cnt_vertices)) {
             ++num_edges;
             max = next_index(max, cnt_vertices);
           }
@@ -63,24 +67,18 @@ void gpc::gpc_lmt::build_lmt(const gpc_polygon &p, int type, gpc_op op) {
 
           int v = min;
           for (int i = 0; i < num_edges; ++i) {
-            edge_table[e_index + i].xb = edge_table[v].vertex.x;
-            edge_table[e_index + i].bot = edge_table[v].vertex;
+            edge_table[e_index + i].xb = vertex_table[v].x;
+            edge_table[e_index + i].bot = vertex_table[v];
 
             v = next_index(v, cnt_vertices);
 
-            edge_table[e_index + i].top = edge_table[v].vertex;
+            edge_table[e_index + i].top = vertex_table[v];
 
             edge_table[e_index + i].dx =
-                (edge_table[v].vertex.x - edge_table[e_index + i].bot.x) /
+                (vertex_table[v].x - edge_table[e_index + i].bot.x) /
                 (edge_table[e_index + i].top.y - edge_table[e_index + i].bot.y);
 
             edge_table[e_index + i].type = type;
-
-            edge_table[e_index + i].outp[ABOVE] = nullptr;
-            edge_table[e_index + i].outp[BELOW] = nullptr;
-
-            edge_table[e_index + i].next = nullptr;
-            edge_table[e_index + i].prev = nullptr;
 
             edge_table[e_index + i].succ =
                 ((num_edges > 1) && (i < (num_edges - 1)))
@@ -96,7 +94,7 @@ void gpc::gpc_lmt::build_lmt(const gpc_polygon &p, int type, gpc_op op) {
             edge_table[e_index + i].bside[SUBJ] = LEFT;
           }
 
-          insert_bound(edge_table[min].vertex.y, edge_table[e_index]);
+          insert_bound(vertex_table[min].y, edge_table[e_index]);
 
           e_index += num_edges;
         }
@@ -105,12 +103,12 @@ void gpc::gpc_lmt::build_lmt(const gpc_polygon &p, int type, gpc_op op) {
       /* Do the contour reverse pass */
       for (int min = 0; min < cnt_vertices; ++min) {
         /* If a reverse local minimum... */
-        if (rev_min(edge_table, min, cnt_vertices)) {
+        if (rev_min(vertex_table, min, cnt_vertices)) {
           /* Search for the previous local maximum... */
           int num_edges = 1;
           int max = prev_index(min, cnt_vertices);
 
-          while (not_rmax(edge_table, max, cnt_vertices)) {
+          while (not_rmax(vertex_table, max, cnt_vertices)) {
             ++num_edges;
             max = prev_index(max, cnt_vertices);
           }
@@ -122,25 +120,18 @@ void gpc::gpc_lmt::build_lmt(const gpc_polygon &p, int type, gpc_op op) {
 
           int v = min;
           for (int i = 0; i < num_edges; i++) {
-            edge_table[e_index + i].xb = edge_table[v].vertex.x;
-            edge_table[e_index + i].bot = edge_table[v].vertex;
+            edge_table[e_index + i].xb = vertex_table[v].x;
+            edge_table[e_index + i].bot = vertex_table[v];
 
             v = prev_index(v, cnt_vertices);
 
-            edge_table[e_index + i].top.x = edge_table[v].vertex.x;
-            edge_table[e_index + i].top.y = edge_table[v].vertex.y;
+            edge_table[e_index + i].top = vertex_table[v];
 
             edge_table[e_index + i].dx =
-                (edge_table[v].vertex.x - edge_table[e_index + i].bot.x) /
+                (vertex_table[v].x - edge_table[e_index + i].bot.x) /
                 (edge_table[e_index + i].top.y - edge_table[e_index + i].bot.y);
 
             edge_table[e_index + i].type = type;
-
-            edge_table[e_index + i].outp[ABOVE] = nullptr;
-            edge_table[e_index + i].outp[BELOW] = nullptr;
-
-            edge_table[e_index + i].next = nullptr;
-            edge_table[e_index + i].prev = nullptr;
 
             edge_table[e_index + i].succ =
                 ((num_edges > 1) && (i < (num_edges - 1)))
@@ -157,7 +148,7 @@ void gpc::gpc_lmt::build_lmt(const gpc_polygon &p, int type, gpc_op op) {
           }
 
           // edge_node *e = &edge_table[e_index];
-          insert_bound(edge_table[min].vertex.y, edge_table[e_index]);
+          insert_bound(vertex_table[min].y, edge_table[e_index]);
 
           e_index += num_edges;
         }

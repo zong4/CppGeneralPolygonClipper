@@ -38,25 +38,59 @@ inline bool optimal(const gpc_vertex_list &v, int i, int n) {
 }
 
 // 当前点是否是一个局部最小值, 左闭右开
-inline bool fwd_min(gpc_edge_node *v, int i, int n) {
-  return (v[prev_index(i, n)].vertex.y >= v[i].vertex.y) &&
-         (v[next_index(i, n)].vertex.y > v[i].vertex.y);
+// inline bool fwd_min(gpc_edge_node *v, int i, int n) {
+//   return (v[prev_index(i, n)].vertex.y >= v[i].vertex.y) &&
+//          (v[next_index(i, n)].vertex.y > v[i].vertex.y);
+// }
+
+// inline bool fwd_min(const std::vector<gpc_edge_node> &v, int i, int n) {
+//   return (v[prev_index(i, n)].vertex.y >= v[i].vertex.y) &&
+//          (v[next_index(i, n)].vertex.y > v[i].vertex.y);
+// }
+
+inline bool fwd_min(const std::vector<gpc_vertex> &v, int i, int n) {
+  return (v[prev_index(i, n)].y >= v[i].y) && (v[next_index(i, n)].y > v[i].y);
 }
 
 // 严格大于
-inline bool not_fmax(gpc_edge_node *v, int i, int n) {
-  return v[next_index(i, n)].vertex.y > v[i].vertex.y;
+// inline bool not_fmax(gpc_edge_node *v, int i, int n) {
+//   return v[next_index(i, n)].vertex.y > v[i].vertex.y;
+// }
+
+// inline bool not_fmax(const std::vector<gpc_edge_node> &v, int i, int n) {
+//   return v[next_index(i, n)].vertex.y > v[i].vertex.y;
+// }
+
+inline bool not_fmax(const std::vector<gpc_vertex> &v, int i, int n) {
+  return v[next_index(i, n)].y > v[i].y;
 }
 
 // 当前点是否是一个局部最大值, 左开右闭
-inline bool rev_min(gpc_edge_node *v, int i, int n) {
-  return (v[prev_index(i, n)].vertex.y > v[i].vertex.y) &&
-         (v[next_index(i, n)].vertex.y >= v[i].vertex.y);
+// inline bool rev_min(gpc_edge_node *v, int i, int n) {
+//   return (v[prev_index(i, n)].vertex.y > v[i].vertex.y) &&
+//          (v[next_index(i, n)].vertex.y >= v[i].vertex.y);
+// }
+
+// inline bool rev_min(const std::vector<gpc_edge_node> &v, int i, int n) {
+//   return (v[prev_index(i, n)].vertex.y > v[i].vertex.y) &&
+//          (v[next_index(i, n)].vertex.y >= v[i].vertex.y);
+// }
+
+inline bool rev_min(const std::vector<gpc_vertex> &v, int i, int n) {
+  return (v[prev_index(i, n)].y > v[i].y) && (v[next_index(i, n)].y >= v[i].y);
 }
 
 // 严格大于
-inline bool not_rmax(gpc_edge_node *v, int i, int n) {
-  return v[prev_index(i, n)].vertex.y > v[i].vertex.y;
+// inline bool not_rmax(gpc_edge_node *v, int i, int n) {
+//   return v[prev_index(i, n)].vertex.y > v[i].vertex.y;
+// }
+
+// inline bool not_rmax(const std::vector<gpc_edge_node> &v, int i, int n) {
+//   return v[prev_index(i, n)].vertex.y > v[i].vertex.y;
+// }
+
+inline bool not_rmax(const std::vector<gpc_vertex> &v, int i, int n) {
+  return v[prev_index(i, n)].y > v[i].y;
 }
 
 // TODO: 转换成函数

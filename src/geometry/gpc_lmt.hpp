@@ -20,7 +20,7 @@ public:
   gpc_lmt() = default;
   ~gpc_lmt();
 
-  void build_lmt(const gpc_polygon &p, int type, gpc_op op);
+  void build_lmt(const gpc_polygon &p, bool type, gpc_op op);
 
 private:
   // edge_node **bound_list(double y);
