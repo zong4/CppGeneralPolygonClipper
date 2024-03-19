@@ -4,8 +4,8 @@
 #include <vector>
 
 #include "../utilis/gpc_macros.hpp"
+#include "gpc_lmt_node.hpp"
 #include "gpc_polygon.hpp"
-#include "lmt_node.hpp"
 
 namespace gpc {
 
@@ -21,7 +21,8 @@ public:
   void build_lmt(const gpc_polygon &p, int type, gpc_op op);
 
 private:
-  edge_node **bound_list(double y);
+  // edge_node **bound_list(double y);
+  void insert_bound(double y, const edge_node &e);
 };
 
 } // namespace gpc

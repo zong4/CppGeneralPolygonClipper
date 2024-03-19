@@ -7,7 +7,7 @@ gpc::gpc_lmt::~gpc_lmt() {
   edge_tables.clear();
 
   for (auto &&lmt : lmt_list) {
-    delete lmt.second;
+    lmt.second.clear();
   }
   lmt_list.clear();
 
@@ -91,7 +91,7 @@ void gpc::gpc_lmt::build_lmt(const gpc_polygon &p, int type, gpc_op op) {
                                                ? &(edge_table[e_index + i - 1])
                                                : nullptr;
 
-            edge_table[e_index + i].next_bound = nullptr;
+            // edge_table[e_index + i].next_bound = nullptr;
 
             edge_table[e_index + i].bside[CLIP] =
                 (op == gpc_op::GPC_DIFF) ? RIGHT : LEFT;
@@ -99,8 +99,7 @@ void gpc::gpc_lmt::build_lmt(const gpc_polygon &p, int type, gpc_op op) {
           }
 
           // edge_node *e = &edge_table[e_index];
-          insert_bound(bound_list(edge_table[min].vertex.y),
-                       &edge_table[e_index]);
+          insert_bound(edge_table[min].vertex.y, edge_table[e_index]);
 
           e_index += num_edges;
         }
@@ -155,7 +154,7 @@ void gpc::gpc_lmt::build_lmt(const gpc_polygon &p, int type, gpc_op op) {
                                                ? &(edge_table[e_index + i - 1])
                                                : nullptr;
 
-            edge_table[e_index + i].next_bound = nullptr;
+            // edge_table[e_index + i].next_bound = nullptr;
 
             edge_table[e_index + i].bside[CLIP] =
                 (op == gpc_op::GPC_DIFF) ? RIGHT : LEFT;
@@ -163,8 +162,7 @@ void gpc::gpc_lmt::build_lmt(const gpc_polygon &p, int type, gpc_op op) {
           }
 
           // edge_node *e = &edge_table[e_index];
-          insert_bound(bound_list(edge_table[min].vertex.y),
-                       &edge_table[e_index]);
+          insert_bound(edge_table[min].vertex.y, edge_table[e_index]);
 
           e_index += num_edges;
         }
@@ -175,24 +173,66 @@ void gpc::gpc_lmt::build_lmt(const gpc_polygon &p, int type, gpc_op op) {
   edge_tables.push_back(edge_table);
 }
 
-gpc::edge_node **gpc::gpc_lmt::bound_list(double y) {
+// gpc::edge_node **gpc::gpc_lmt::bound_list(double y) {
+//   if (lmt_list.empty()) {
+//     /* Add node onto the tail end of the LMT */
+//     lmt_list.push_back(lmt_node(y, nullptr));
+//     return &(lmt_list.back().second);
+//   }
+
+//   for (auto it = lmt_list.begin(); it != lmt_list.end(); ++it) {
+//     if (y < it->first) {
+//       /* Insert a new LMT node before the current node */
+//       lmt_list.insert(it, lmt_node(y, nullptr));
+//       return &(prev(it)->second);
+//     } else if (y == it->first) {
+//       return &(it->second);
+//     }
+//   }
+
+//   /* Add node onto the tail end of the LMT */
+//   lmt_list.push_back(lmt_node(y, nullptr));
+//   return &(lmt_list.back().second);
+// }
+
+void gpc::gpc_lmt::insert_bound(double y, const edge_node &e) {
   if (lmt_list.empty()) {
     /* Add node onto the tail end of the LMT */
-    lmt_list.push_back(lmt_node(y, nullptr));
-    return &(lmt_list.back().second);
+    lmt_list.push_back(lmt_node(y, {e}));
+    return;
   }
 
   for (auto it = lmt_list.begin(); it != lmt_list.end(); ++it) {
     if (y < it->first) {
       /* Insert a new LMT node before the current node */
-      lmt_list.insert(it, lmt_node(y, nullptr));
-      return &(prev(it)->second);
+      lmt_list.insert(it, lmt_node(y, {e}));
+      return;
     } else if (y == it->first) {
-      return &(it->second);
+      for (auto it2 = it->second.begin(); it2 != it->second.end(); ++it2) {
+        if (e.bot.x < it2->bot.x) {
+          /* Insert a new node mid-list */
+          it->second.insert(it2, e);
+          return;
+        } else if (e.bot.x == it2->bot.x) {
+          if (e.dx < it2->dx) {
+            /* Insert a new node mid-list */
+            it->second.insert(it2, e);
+            return;
+          } else {
+            /* Head further down the list */
+            continue;
+          }
+        } else {
+          /* Head further down the list */
+          continue;
+        }
+      }
+
+      return;
     }
   }
 
   /* Add node onto the tail end of the LMT */
-  lmt_list.push_back(lmt_node(y, nullptr));
-  return &(lmt_list.back().second);
+  lmt_list.push_back(lmt_node(y, {e}));
+  return;
 }

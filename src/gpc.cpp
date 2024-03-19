@@ -495,9 +495,8 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
     if (!lmt.lmt_list.empty()) {
       if (lmt.lmt_list.front().first == yb) {
         /* Add edges starting at this local minimum to the AET */
-        for (auto edge = lmt.lmt_list.front().second; edge;
-             edge = edge->next_bound) {
-          add_edge_to_aet(&aet, edge, nullptr); // TODO:
+        for (auto &&edge : lmt.lmt_list.front().second) {
+          add_edge_to_aet(&aet, &edge, nullptr); // TODO:
         }
 
         lmt.lmt_list.pop_front(); // 移动到下一个局部最小值
