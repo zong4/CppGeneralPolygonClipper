@@ -1,10 +1,18 @@
 ﻿#include "gpc_lmt.hpp"
 
 gpc::gpc_lmt::~gpc_lmt() {
-  for (auto &&edge_table : edge_tables) {
-    delete edge_table;
-  }
-  edge_tables.clear();
+  // for (auto &&edge_table : edge_tables) {
+  //   for (auto &&edge : edge_table) {
+  //     edge.outp[0] = nullptr;
+  //     edge.outp[1] = nullptr;
+  //     edge.prev = nullptr;
+  //     edge.next = nullptr;
+  //     edge.pred = nullptr;
+  //     edge.succ = nullptr;
+  //   }
+  //   edge_table.clear();
+  // }
+  // edge_tables.clear();
 
   for (auto &&lmt : lmt_list) {
     lmt.second.clear();
@@ -72,6 +80,7 @@ void gpc::gpc_lmt::set_edge_table(int min, int num_edges,
                                   const std::vector<gpc_vertex> &vertex_table,
                                   bool type, gpc_op op, bool is_reverse) {
   /* Create the entire input polygon edge table in one go */
+  // std::vector<gpc_edge_node> edge_table(vertex_table.size());
   gpc_edge_node *edge_table =
       (gpc_edge_node *)malloc(vertex_table.size() * sizeof(gpc_edge_node));
 

@@ -31,5 +31,8 @@ TEST(gpc_polygon_clip, test_diff_1) {
                                                      {0, 100}}),
                                false);
 
+  std::cout << "result_polygon: " << result_polygon << std::endl;
+  std::cout << "expected_polygon: " << expected_polygon << std::endl;
+
   EXPECT_TRUE(gpc::equal_sort(result_polygon, expected_polygon));
 }
