@@ -25,8 +25,8 @@ void gpc::gpc_lmt::build_lmt(const gpc_polygon &p, int type, gpc_op op) {
   }
 
   /* Create the entire input polygon edge table in one go */
-  edge_node *edge_table =
-      (edge_node *)malloc(total_vertices * sizeof(edge_node));
+  gpc_edge_node *edge_table =
+      (gpc_edge_node *)malloc(total_vertices * sizeof(gpc_edge_node));
 
   int e_index = 0;
   for (int c = 0; c < p.num_contours(); ++c) {
@@ -168,17 +168,17 @@ void gpc::gpc_lmt::build_lmt(const gpc_polygon &p, int type, gpc_op op) {
   edge_tables.push_back(edge_table);
 }
 
-void gpc::gpc_lmt::insert_bound(double y, const edge_node &e) {
+void gpc::gpc_lmt::insert_bound(double y, const gpc_edge_node &e) {
   if (lmt_list.empty()) {
     /* Add node onto the tail end of the LMT */
-    lmt_list.push_back(lmt_node(y, {e}));
+    lmt_list.push_back(gpc_lmt_node(y, {e}));
     return;
   }
 
   for (auto it = lmt_list.begin(); it != lmt_list.end(); ++it) {
     if (y < it->first) {
       /* Insert a new LMT node before the current node */
-      lmt_list.insert(it, lmt_node(y, {e}));
+      lmt_list.insert(it, gpc_lmt_node(y, {e}));
       return;
     } else if (y == it->first) {
       for (auto it2 = it->second.begin(); it2 != it->second.end(); ++it2) {
@@ -200,6 +200,6 @@ void gpc::gpc_lmt::insert_bound(double y, const edge_node &e) {
   }
 
   /* Add node onto the tail end of the LMT */
-  lmt_list.push_back(lmt_node(y, {e}));
+  lmt_list.push_back(gpc_lmt_node(y, {e}));
   return;
 }

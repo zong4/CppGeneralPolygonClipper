@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "edge_node.hpp"
+#include "gpc_edge_node.hpp"
 #include "gpc_macros.hpp"
 #include "gpc_vertex_list.hpp"
 
@@ -38,24 +38,24 @@ inline bool optimal(const gpc_vertex_list &v, int i, int n) {
 }
 
 // 当前点是否是一个局部最小值, 左闭右开
-inline bool fwd_min(edge_node *v, int i, int n) {
+inline bool fwd_min(gpc_edge_node *v, int i, int n) {
   return (v[prev_index(i, n)].vertex.y >= v[i].vertex.y) &&
          (v[next_index(i, n)].vertex.y > v[i].vertex.y);
 }
 
 // 严格大于
-inline bool not_fmax(edge_node *v, int i, int n) {
+inline bool not_fmax(gpc_edge_node *v, int i, int n) {
   return v[next_index(i, n)].vertex.y > v[i].vertex.y;
 }
 
 // 当前点是否是一个局部最大值, 左开右闭
-inline bool rev_min(edge_node *v, int i, int n) {
+inline bool rev_min(gpc_edge_node *v, int i, int n) {
   return (v[prev_index(i, n)].vertex.y > v[i].vertex.y) &&
          (v[next_index(i, n)].vertex.y >= v[i].vertex.y);
 }
 
 // 严格大于
-inline bool not_rmax(edge_node *v, int i, int n) {
+inline bool not_rmax(gpc_edge_node *v, int i, int n) {
   return v[prev_index(i, n)].vertex.y > v[i].vertex.y;
 }
 

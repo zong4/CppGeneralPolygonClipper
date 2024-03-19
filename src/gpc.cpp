@@ -4,14 +4,14 @@ namespace gpc {
 
 typedef struct it_shape /* Intersection table                */
 {
-  edge_node *ie[2];                /* Intersecting edge (bundle) pair   */
+  gpc_edge_node *ie[2];            /* Intersecting edge (bundle) pair   */
   gpc_vertex point;                /* Point of intersection             */
   struct it_shape *next = nullptr; /* The next intersection table node  */
 } it_node;
 
 typedef struct st_shape /* Sorted edge table                 */
 {
-  edge_node *edge;       /* Pointer to AET edge               */
+  gpc_edge_node *edge;   /* Pointer to AET edge               */
   double xb;             /* Scanbeam bottom x coordinate      */
   double xt;             /* Scanbeam top x coordinate         */
   double dx;             /* Change in x for a unit y increase */
@@ -34,7 +34,8 @@ static void reset_it(it_node **it) {
   }
 }
 
-static void add_edge_to_aet(edge_node **aet, edge_node *edge, edge_node *prev) {
+static void add_edge_to_aet(gpc_edge_node **aet, gpc_edge_node *edge,
+                            gpc_edge_node *prev) {
   if (!*aet) {
     /* Append edge onto the tail end of the AET */
     *aet = edge;
@@ -69,8 +70,8 @@ static void add_edge_to_aet(edge_node **aet, edge_node *edge, edge_node *prev) {
   }
 }
 
-static void add_intersection(it_node **it, edge_node *edge0, edge_node *edge1,
-                             double x, double y) {
+static void add_intersection(it_node **it, gpc_edge_node *edge0,
+                             gpc_edge_node *edge1, double x, double y) {
   it_node *existing_node;
 
   if (!*it) {
@@ -97,7 +98,7 @@ static void add_intersection(it_node **it, edge_node *edge0, edge_node *edge1,
   }
 }
 
-static void add_st_edge(st_node **st, it_node **it, edge_node *edge,
+static void add_st_edge(st_node **st, it_node **it, gpc_edge_node *edge,
                         double dy) {
   st_node *existing_node;
   double den, r, x, y;
@@ -139,9 +140,10 @@ static void add_st_edge(st_node **st, it_node **it, edge_node *edge,
   }
 }
 
-static void build_intersection_table(it_node **it, edge_node *aet, double dy) {
+static void build_intersection_table(it_node **it, gpc_edge_node *aet,
+                                     double dy) {
   st_node *st, *stp;
-  edge_node *edge;
+  gpc_edge_node *edge;
 
   /* Build intersection table for the current scanbeam */
   reset_it(it);
@@ -162,17 +164,17 @@ static void build_intersection_table(it_node **it, edge_node *aet, double dy) {
   }
 }
 
-static void swap_intersecting_edge_bundles(edge_node **aet,
+static void swap_intersecting_edge_bundles(gpc_edge_node **aet,
                                            it_node *intersect) {
-  edge_node *e0 = intersect->ie[0];
-  edge_node *e1 = intersect->ie[1];
-  edge_node *e0t = e0;
-  edge_node *e1t = e1;
-  edge_node *e0n = e0->next;
-  edge_node *e1n = e1->next;
+  gpc_edge_node *e0 = intersect->ie[0];
+  gpc_edge_node *e1 = intersect->ie[1];
+  gpc_edge_node *e0t = e0;
+  gpc_edge_node *e1t = e1;
+  gpc_edge_node *e0n = e0->next;
+  gpc_edge_node *e1n = e1->next;
 
   // Find the node before the e0 bundle
-  edge_node *e0p = e0->prev;
+  gpc_edge_node *e0p = e0->prev;
   if (e0->bstate[ABOVE] == bundle_state::BUNDLE_HEAD) {
     do {
       e0t = e0p;
@@ -181,7 +183,7 @@ static void swap_intersecting_edge_bundles(edge_node **aet,
   }
 
   // Find the node before the e1 bundle
-  edge_node *e1p = e1->prev;
+  gpc_edge_node *e1p = e1->prev;
   if (e1->bstate[ABOVE] == bundle_state::BUNDLE_HEAD) {
     do {
       e1t = e1p;
@@ -341,7 +343,7 @@ static void merge_right(polygon_node *p, polygon_node *q, polygon_node *list) {
   }
 }
 
-static void add_local_min(polygon_node **p, edge_node *edge, double x,
+static void add_local_min(polygon_node **p, gpc_edge_node *edge, double x,
                           double y) {
   polygon_node *existing_min;
   vertex_node *nv;
@@ -389,7 +391,7 @@ static void add_vertex(vertex_node **t, double x, double y) {
     add_vertex(&((*t)->next), x, y);
 }
 
-static void new_tristrip(polygon_node **tn, edge_node *edge, double x,
+static void new_tristrip(polygon_node **tn, gpc_edge_node *edge, double x,
                          double y) {
   if (!(*tn)) {
     MALLOC(*tn, sizeof(polygon_node), "tristrip node creation", polygon_node);
@@ -463,8 +465,8 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
     parity[CLIP] = RIGHT;
 
   it_node *it = nullptr, *intersect;
-  edge_node *edge;
-  edge_node *aet = nullptr;
+  gpc_edge_node *edge;
+  gpc_edge_node *aet = nullptr;
   polygon_node *out_poly = nullptr, *p, *q, *poly, *npoly;
   vertex_node *vtx, *nv;
   int in[2];
@@ -513,8 +515,8 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
     aet->bundle[ABOVE][!aet->type] = FALSE;
     aet->bstate[ABOVE] = bundle_state::UNBUNDLED;
 
-    edge_node *e0 = aet;
-    for (edge_node *next_edge = aet->next; next_edge;
+    gpc_edge_node *e0 = aet;
+    for (gpc_edge_node *next_edge = aet->next; next_edge;
          next_edge = next_edge->next) {
       /* Set up bundle fields of next edge */
       next_edge->bundle[ABOVE][next_edge->type] = (next_edge->top.y != yb);
@@ -712,8 +714,8 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
     /* Delete terminating edges from the AET, otherwise compute xt */
     for (edge = aet; edge; edge = edge->next) {
       if (edge->top.y == yb) {
-        edge_node *prev_edge = edge->prev;
-        edge_node *next_edge = edge->next;
+        gpc_edge_node *prev_edge = edge->prev;
+        gpc_edge_node *next_edge = edge->next;
         if (prev_edge)
           prev_edge->next = next_edge;
         else
@@ -747,7 +749,7 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
       /* Process each node in the intersection table */
       for (intersect = it; intersect; intersect = intersect->next) {
         e0 = intersect->ie[0];
-        edge_node *e1 = intersect->ie[1];
+        gpc_edge_node *e1 = intersect->ie[1];
 
         /* Only generate output for contributing intersections */
         if ((e0->bundle[ABOVE][CLIP] || e0->bundle[ABOVE][SUBJ]) &&
@@ -895,8 +897,8 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
 
       /* Prepare for next scanbeam */
       for (edge = aet; edge; edge = edge->next) {
-        edge_node *next_edge = edge->next;
-        edge_node *succ_edge = edge->succ;
+        gpc_edge_node *next_edge = edge->next;
+        gpc_edge_node *succ_edge = edge->succ;
 
         if ((edge->top.y == yt) && succ_edge) {
           /* Replace AET edge by its successor */
@@ -904,7 +906,7 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
           succ_edge->bstate[BELOW] = edge->bstate[ABOVE];
           succ_edge->bundle[BELOW][CLIP] = edge->bundle[ABOVE][CLIP];
           succ_edge->bundle[BELOW][SUBJ] = edge->bundle[ABOVE][SUBJ];
-          edge_node *prev_edge = edge->prev;
+          gpc_edge_node *prev_edge = edge->prev;
           if (prev_edge)
             prev_edge->next = succ_edge;
           else
