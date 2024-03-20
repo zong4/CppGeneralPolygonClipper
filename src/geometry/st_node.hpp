@@ -4,7 +4,8 @@
 
 namespace gpc {
 
-class st_node // Sorted edge table
+// Sorted edge table
+class st_node
 {
 public:
     gpc_edge_node *edge; // Pointer to AET edge

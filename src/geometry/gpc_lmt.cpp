@@ -176,6 +176,8 @@ void gpc::gpc_lmt::insert_bound(double y, const gpc_edge_node &e)
                 }
             }
 
+            /* Add node onto the tail end of the LMT */
+            it->second.push_back(e);
             return;
         }
     }

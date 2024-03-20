@@ -4,7 +4,8 @@
 
 namespace gpc {
 
-class it_node // Intersection table
+// Intersection table
+class it_node
 {
 public:
     gpc_edge_node *ie[2];    // Intersecting edge (bundle) pair

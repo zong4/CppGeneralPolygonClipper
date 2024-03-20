@@ -3,10 +3,10 @@
 #include <cmath>
 #include <float.h>
 
+namespace gpc {
+
 // Increase GPC_EPSILON to encourage merging of near coincident edges
 const double GPC_EPSILON = DBL_EPSILON;
-
-namespace gpc {
 
 inline bool equal(double a, double b)
 {
