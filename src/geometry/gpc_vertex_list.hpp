@@ -8,29 +8,32 @@
 namespace gpc {
 
 // Vertex list structure
-class gpc_vertex_list {
+class gpc_vertex_list
+{
 public:
-  bool is_contributing = true;
-  std::vector<gpc_vertex> vertex; // Vertex array pointer
+    bool is_contributing = true;
+    std::vector<gpc_vertex> vertex; // Vertex array pointer
 
 public:
-  gpc_vertex_list() = default;
-  gpc_vertex_list(const std::vector<gpc_vertex> &in_vertex)
-      : vertex(in_vertex) {}
-  ~gpc_vertex_list() = default;
+    gpc_vertex_list() = default;
+    gpc_vertex_list(const std::vector<gpc_vertex> &in_vertex)
+        : vertex(in_vertex)
+    {
+    }
+    ~gpc_vertex_list() = default;
 
-  inline int num_vertices() const { return vertex.size(); }
+    inline int num_vertices() const { return vertex.size(); }
 
-  bool operator==(const gpc_vertex_list &rhs) const;
+    bool operator==(const gpc_vertex_list &rhs) const;
 
-  friend std::istream &operator>>(std::istream &is,
-                                  gpc_vertex_list &vertex_list);
-  friend std::ostream &operator<<(std::ostream &os,
-                                  const gpc_vertex_list &vertex_list);
+    friend std::istream &operator>>(std::istream &is,
+                                    gpc_vertex_list &vertex_list);
+    friend std::ostream &operator<<(std::ostream &os,
+                                    const gpc_vertex_list &vertex_list);
 
-  gpc_bbox create_bbox() const;
+    gpc_bbox create_bbox() const;
 
-  std::string to_string() const;
+    std::string to_string() const;
 };
 
 } // namespace gpc

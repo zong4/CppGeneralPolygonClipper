@@ -8,8 +8,9 @@ const double GPC_EPSILON = DBL_EPSILON;
 
 namespace gpc {
 
-inline bool equal(double a, double b) {
-  return (fabs((a) - (b)) <= GPC_EPSILON);
+inline bool equal(double a, double b)
+{
+    return (fabs((a) - (b)) <= GPC_EPSILON);
 }
 
 } // namespace gpc

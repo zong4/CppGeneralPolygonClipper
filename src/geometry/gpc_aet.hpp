@@ -6,15 +6,16 @@
 
 namespace gpc {
 
-class gpc_aet {
+class gpc_aet
+{
 public:
-  std::list<gpc_edge_node> aet_list;
+    std::list<gpc_edge_node> aet_list;
 
 public:
-  gpc_aet() = default;
-  ~gpc_aet() = default;
+    gpc_aet() = default;
+    ~gpc_aet() = default;
 
-  void insert(const gpc_edge_node &edge);
+    void insert(const gpc_edge_node &edge);
 };
 
 } // namespace gpc
