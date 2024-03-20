@@ -2,15 +2,6 @@
 
 namespace gpc {
 
-typedef struct st_shape /* Sorted edge table                 */
-{
-  gpc_edge_node *edge;   /* Pointer to AET edge               */
-  double xb;             /* Scanbeam bottom x coordinate      */
-  double xt;             /* Scanbeam top x coordinate         */
-  double dx;             /* Change in x for a unit y increase */
-  struct st_shape *prev; /* Previous edge in sorted list      */
-} st_node;
-
 static void reset_it(it_node **it) {
   it_node *itn;
 
@@ -21,35 +12,12 @@ static void reset_it(it_node **it) {
   }
 }
 
-static void add_edge_to_aet(std::list<gpc_edge_node> &aet, gpc_edge_node edge,
-                            gpc_edge_node *prev) {
-
-  if (aet.empty()) {
-    aet.push_back(edge);
-    return;
-  }
-
-  for (auto it = aet.begin(); it != aet.end(); ++it) {
-    if (edge.xb() < it->xb()) {
-      aet.insert(it, edge);
-      return;
-    } else if (edge.xb() == it->xb()) {
-      if (edge.dx < it->dx) {
-        aet.insert(it, edge);
-        return;
-      }
-    }
-  }
-
-  aet.push_back(edge);
-}
-
 static void add_intersection(it_node **it, gpc_edge_node *edge0,
                              gpc_edge_node *edge1, double x, double y) {
   it_node *existing_node;
 
   if (!*it) {
-    /* Append a new node to the tail of the list */
+    // Append a new node to the tail of the list
     MALLOC(*it, sizeof(it_node), "IT insertion", it_node);
     (*it)->ie[0] = edge0;
     (*it)->ie[1] = edge1;
@@ -58,7 +26,7 @@ static void add_intersection(it_node **it, gpc_edge_node *edge0,
     (*it)->next = nullptr;
   } else {
     if ((*it)->point.y > y) {
-      /* Insert a new node mid-list */
+      // Insert a new node mid-list
       existing_node = *it;
       MALLOC(*it, sizeof(it_node), "IT insertion", it_node);
       (*it)->ie[0] = edge0;
@@ -67,7 +35,7 @@ static void add_intersection(it_node **it, gpc_edge_node *edge0,
       (*it)->point.y = y;
       (*it)->next = existing_node;
     } else
-      /* Head further down the list */
+      // Head further down the list
       add_intersection(&((*it)->next), edge0, edge1, x, y);
   }
 }
@@ -78,7 +46,7 @@ static void add_st_edge(st_node **st, it_node **it, gpc_edge_node *edge,
   double den, r, x, y;
 
   if (!*st) {
-    /* Append edge onto the tail end of the ST */
+    // Append edge onto the tail end of the ST
     MALLOC(*st, sizeof(st_node), "ST insertion", st_node);
     (*st)->edge = edge;
     (*st)->xb = edge->xb();
@@ -88,10 +56,10 @@ static void add_st_edge(st_node **st, it_node **it, gpc_edge_node *edge,
   } else {
     den = ((*st)->xt - (*st)->xb) - (edge->xt() - edge->xb());
 
-    /* If new edge and ST edge don't cross */
+    // If new edge and ST edge don't cross
     if ((edge->xt() >= (*st)->xt) || (edge->dx == (*st)->dx) ||
         (fabs(den) <= DBL_EPSILON)) {
-      /* No intersection - insert edge here (before the ST edge) */
+      // No intersection - insert edge here (before the ST edge)
       existing_node = *st;
       MALLOC(*st, sizeof(st_node), "ST insertion", st_node);
       (*st)->edge = edge;
@@ -100,15 +68,15 @@ static void add_st_edge(st_node **st, it_node **it, gpc_edge_node *edge,
       (*st)->dx = edge->dx;
       (*st)->prev = existing_node;
     } else {
-      /* Compute intersection between new edge and ST edge */
+      // Compute intersection between new edge and ST edge
       r = (edge->xb() - (*st)->xb) / den;
       x = (*st)->xb + r * ((*st)->xt - (*st)->xb);
       y = r * dy;
 
-      /* Insert the edge pointers and the intersection point in the IT */
+      // Insert the edge pointers and the intersection point in the IT
       add_intersection(it, (*st)->edge, edge, x, y);
 
-      /* Head further into the ST */
+      // Head further into the ST
       add_st_edge(&((*st)->prev), it, edge, dy);
     }
   }
@@ -119,18 +87,18 @@ static void build_intersection_table(it_node **it,
   st_node *st, *stp;
   gpc_edge_node *edge;
 
-  /* Build intersection table for the current scanbeam */
+  // Build intersection table for the current scanbeam
   reset_it(it);
   st = nullptr;
 
-  /* Process each AET edge */
+  // Process each AET edge
   for (auto &&edge : aet) {
     if ((edge.bstate[ABOVE] == bundle_state::BUNDLE_HEAD) ||
         edge.bundle[ABOVE][CLIP] || edge.bundle[ABOVE][SUBJ])
       add_st_edge(&st, it, &edge, dy);
   }
 
-  /* Free the sorted edge table */
+  // Free the sorted edge table
   while (st) {
     stp = st->prev;
     delete (st);
@@ -138,6 +106,7 @@ static void build_intersection_table(it_node **it,
   }
 }
 
+// TODO:
 static void swap_intersecting_edge_bundles(std::list<gpc_edge_node> &aet,
                                            it_node *intersect) {
   gpc_edge_node *e0 = intersect->ie[0];
@@ -194,17 +163,17 @@ static int count_contours(polygon_node *polygon) {
 
   for (nc = 0; polygon; polygon = polygon->next)
     if (polygon->active) {
-      /* Count the vertices in the current contour */
+      // Count the vertices in the current contour
       nv = 0;
       for (v = polygon->proxy->v[LEFT]; v; v = v->next)
         nv++;
 
-      /* Record valid vertex counts in the active field */
+      // Record valid vertex counts in the active field
       if (nv > 2) {
         polygon->active = nv;
         nc++;
       } else {
-        /* Invalid contour: just free the heap */
+        // Invalid contour: just free the heap
         for (v = polygon->proxy->v[LEFT]; v; v = nextv) {
           nextv = v->next;
           delete v;
@@ -218,30 +187,30 @@ static int count_contours(polygon_node *polygon) {
 static void add_left(polygon_node *p, double x, double y) {
   vertex_node *nv;
 
-  /* Create a new vertex node and set its fields */
+  // Create a new vertex node and set its fields
   MALLOC(nv, sizeof(vertex_node), "vertex node creation", vertex_node);
   nv->x = x;
   nv->y = y;
 
-  /* Add vertex nv to the left end of the polygon's vertex list */
+  // Add vertex nv to the left end of the polygon's vertex list
   nv->next = p->proxy->v[LEFT];
 
-  /* Update proxy->[LEFT] to point to nv */
+  // Update proxy->[LEFT] to point to nv
   p->proxy->v[LEFT] = nv;
 }
 
 static void merge_left(polygon_node *p, polygon_node *q, polygon_node *list) {
   polygon_node *target;
 
-  /* Label contour as a hole */
+  // Label contour as a hole
   q->proxy->hole = TRUE;
 
   if (p->proxy != q->proxy) {
-    /* Assign p's vertex list to the left end of q's list */
+    // Assign p's vertex list to the left end of q's list
     p->proxy->v[RIGHT]->next = q->proxy->v[LEFT];
     q->proxy->v[LEFT] = p->proxy->v[LEFT];
 
-    /* Redirect any p->proxy references to q->proxy */
+    // Redirect any p->proxy references to q->proxy
 
     for (target = p->proxy; list; list = list->next) {
       if (list->proxy == target) {
@@ -255,31 +224,31 @@ static void merge_left(polygon_node *p, polygon_node *q, polygon_node *list) {
 static void add_right(polygon_node *p, double x, double y) {
   vertex_node *nv;
 
-  /* Create a new vertex node and set its fields */
+  // Create a new vertex node and set its fields
   MALLOC(nv, sizeof(vertex_node), "vertex node creation", vertex_node);
   nv->x = x;
   nv->y = y;
   nv->next = nullptr;
 
-  /* Add vertex nv to the right end of the polygon's vertex list */
+  // Add vertex nv to the right end of the polygon's vertex list
   p->proxy->v[RIGHT]->next = nv;
 
-  /* Update proxy->v[RIGHT] to point to nv */
+  // Update proxy->v[RIGHT] to point to nv
   p->proxy->v[RIGHT] = nv;
 }
 
 static void merge_right(polygon_node *p, polygon_node *q, polygon_node *list) {
   polygon_node *target;
 
-  /* Label contour as external */
+  // Label contour as external
   q->proxy->hole = FALSE;
 
   if (p->proxy != q->proxy) {
-    /* Assign p's vertex list to the right end of q's list */
+    // Assign p's vertex list to the right end of q's list
     q->proxy->v[RIGHT]->next = p->proxy->v[LEFT];
     q->proxy->v[RIGHT] = p->proxy->v[RIGHT];
 
-    /* Redirect any p->proxy references to q->proxy */
+    // Redirect any p->proxy references to q->proxy
     for (target = p->proxy; list; list = list->next) {
       if (list->proxy == target) {
         list->active = FALSE;
@@ -298,22 +267,22 @@ static void add_local_min(polygon_node **p, gpc_edge_node *edge, double x,
 
   MALLOC(*p, sizeof(polygon_node), "polygon node creation", polygon_node);
 
-  /* Create a new vertex node and set its fields */
+  // Create a new vertex node and set its fields
   MALLOC(nv, sizeof(vertex_node), "vertex node creation", vertex_node);
   nv->x = x;
   nv->y = y;
   nv->next = nullptr;
 
-  /* Initialise proxy to point to p itself */
+  // Initialise proxy to point to p itself
   (*p)->proxy = (*p);
   (*p)->active = TRUE;
   (*p)->next = existing_min;
 
-  /* Make v[LEFT] and v[RIGHT] point to new vertex nv */
+  // Make v[LEFT] and v[RIGHT] point to new vertex nv
   (*p)->v[LEFT] = nv;
   (*p)->v[RIGHT] = nv;
 
-  /* Assign polygon p to the edge */
+  // Assign polygon p to the edge
   edge->outp[ABOVE] = *p;
 }
 
@@ -333,7 +302,7 @@ static void add_vertex(vertex_node **t, double x, double y) {
     (*t)->y = y;
     (*t)->next = nullptr;
   } else
-    /* Head further down the list */
+    // Head further down the list
     add_vertex(&((*t)->next), x, y);
 }
 
@@ -348,15 +317,9 @@ static void new_tristrip(polygon_node **tn, gpc_edge_node *edge, double x,
     add_vertex(&((*tn)->v[LEFT]), x, y);
     edge->outp[ABOVE] = *tn;
   } else
-    /* Head further down the list */
+    // Head further down the list
     new_tristrip(&((*tn)->next), edge, x, y);
 }
-
-/*
-===========================================================================
-                             Public Functions
-===========================================================================
-*/
 
 void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
                       gpc_polygon &result) {
@@ -387,12 +350,12 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
   }
 
   // subj 和 clip 都不为空
-  /* 确定可能有贡献的轮廓 */
+  // 确定可能有贡献的轮廓
   if ((op == gpc_op::GPC_INT) || (op == gpc_op::GPC_DIFF)) {
     minimax_test(subj, clip, op);
   }
 
-  /* 构建局部最小表 */
+  // 构建局部最小表
   gpc_lmt lmt;
   lmt.build_lmt(subj, SUBJ, op);
   lmt.build_lmt(clip, CLIP, op);
@@ -400,30 +363,26 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
   std::sort(lmt.sbtree.begin(), lmt.sbtree.end());
   const std::vector<double> &sbt = lmt.sbtree;
 
-  /* 如果没有轮廓有贡献，返回空结果 */
+  // 如果没有轮廓有贡献，返回空结果
   if (lmt.lmt_list.empty()) {
     return;
   }
 
-  /* 对于差集操作，反转剪切多边形 */
+  // 对于差集操作，反转剪切多边形
   int parity[2] = {LEFT, LEFT};
   if (op == gpc_op::GPC_DIFF)
     parity[CLIP] = RIGHT;
 
   it_node *it = nullptr, *intersect;
   polygon_node *out_poly = nullptr, *p, *q, *poly, *npoly;
-  vertex_node *vtx, *nv;
   int in[2];
-  int c, v, contributing;
-  int bl, br, tl, tr;
-  double xb, ix, iy;
-
-  /* 处理每个扫描线 */
-  int scanbeam = 0;
   polygon_node *cf = nullptr; // TODO:
-  std::list<gpc_edge_node> aet;
+
+  // 处理每个扫描线
+  int scanbeam = 0;
+  gpc_aet aet;
   while (scanbeam < sbt.size()) {
-    /* 设置扫描线的底部和顶部 */
+    // 设置扫描线的底部和顶部
     double yb = sbt[scanbeam++];
 
     while (scanbeam < sbt.size()) {
@@ -437,37 +396,34 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
     double dy = yt - yb;
 
     // 扫描线边界处理
-
-    /* 将从这个局部最小值开始的边添加到 AET 中 */
+    // 将从这个局部最小值开始的边添加到 AET 中
     if (!lmt.lmt_list.empty()) {
       if (lmt.lmt_list.front().first == yb) {
-        /* Add edges starting at this local minimum to the AET */
+        // Add edges starting at this local minimum to the AET
         for (auto &&edge : lmt.lmt_list.front().second) {
-          add_edge_to_aet(aet, edge, nullptr); // TODO:
+          aet.insert(edge);
         }
 
         lmt.lmt_list.pop_front(); // 移动到下一个局部最小值
       }
     }
 
-    /* 设置虚拟的前一个 x 值 */
-    double px = -DBL_MAX;
-
-    /* 在 AET 中创建捆绑 */
-    /* 为第一条边设置捆绑字段 */
-    aet.front().bundle[ABOVE][aet.front().type] =
-        (aet.front().top.y !=
+    // 在 AET 中创建捆绑
+    // 为第一条边设置捆绑字段
+    aet.aet_list.front().bundle[ABOVE][aet.aet_list.front().type] =
+        (aet.aet_list.front().top.y !=
          yb); // 如果边的顶部不在当前扫描线上，则设置为 TRUE
-    aet.front().bundle[ABOVE][!aet.front().type] = FALSE;
-    aet.front().bstate[ABOVE] = bundle_state::UNBUNDLED;
+    aet.aet_list.front().bundle[ABOVE][!aet.aet_list.front().type] = FALSE;
+    aet.aet_list.front().bstate[ABOVE] = bundle_state::UNBUNDLED;
 
-    for (auto it = std::next(aet.begin()); it != aet.end(); ++it) {
-      /* Set up bundle fields of next edge */
+    for (auto it = std::next(aet.aet_list.begin()); it != aet.aet_list.end();
+         ++it) {
+      // Set up bundle fields of next edge
       it->bundle[ABOVE][it->type] = (it->top.y != yb);
       it->bundle[ABOVE][!it->type] = FALSE;
       it->bstate[ABOVE] = bundle_state::UNBUNDLED;
 
-      /* 如果边在扫描线边界以上且与前一条边重合，则捆绑边 */
+      // 如果边在扫描线边界以上且与前一条边重合，则捆绑边
       if (it->bundle[ABOVE][it->type]) {
         if (equal(std::prev(it)->xb(), it->xb()) &&
             equal(std::prev(it)->dx, it->dx) && (std::prev(it)->top.y != yb)) {
@@ -483,21 +439,27 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
       }
     }
 
-    int exists[2];
-    h_state horiz[2] = {h_state::NH,
-                        h_state::NH}; // 设置多边形的水平状态为非水平
+    // 设置虚拟的前一个 x 值
+    double px = -DBL_MAX;
 
-    /* 在此扫描线边界处理每条边 */
-    for (auto &&edge : aet) {
+    int exists[2];
+
+    // 设置多边形的水平状态为非水平
+    h_state horiz[2] = {h_state::NH, h_state::NH};
+
+    // 在此扫描线边界处理每条边
+    for (auto &&edge : aet.aet_list) {
       exists[CLIP] = edge.bundle[ABOVE][CLIP] + (edge.bundle[BELOW][CLIP] << 1);
       exists[SUBJ] = edge.bundle[ABOVE][SUBJ] + (edge.bundle[BELOW][SUBJ] << 1);
 
       if (exists[CLIP] || exists[SUBJ]) {
-        /* 设置边的边界侧 */
+        // 设置边的边界侧
         edge.bside[CLIP] = parity[CLIP];
         edge.bside[SUBJ] = parity[SUBJ];
 
-        /* Determine contributing status and quadrant occupancies */
+        // Determine contributing status and quadrant occupancies
+        int contributing;
+        int bl, br, tl, tr;
         switch (op) {
         case gpc_op::GPC_DIFF:
         case gpc_op::GPC_INT:
@@ -556,11 +518,11 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
           break;
         }
 
-        /* 更新奇偶性 */
+        // 更新奇偶性
         parity[CLIP] ^= edge.bundle[ABOVE][CLIP];
         parity[SUBJ] ^= edge.bundle[ABOVE][SUBJ];
 
-        /* 更新水平状态 */
+        // 更新水平状态
         if (exists[CLIP])
           horiz[CLIP] = next_h_state[horiz[CLIP]]
                                     [((exists[CLIP] - 1) << 1) + parity[CLIP]];
@@ -572,7 +534,7 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
             static_cast<vertex_type>(tr + (tl << 1) + (br << 2) + (bl << 3));
 
         if (contributing) {
-          xb = edge.xb();
+          double xb = edge.xb();
 
           switch (vclass) {
           case vertex_type::EMN: // 外部最小值
@@ -669,29 +631,29 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
             break;
           default:
             break;
-          } /* End of switch */
-        }   /* End of contributing conditional */
-      }     /* End of edge exists conditional */
-    }       /* End of AET loop */
+          } // End of switch
+        }   // End of contributing conditional
+      }     // End of edge exists conditional
+    }       // End of AET loop
 
     // Delete terminating edges from the AET, otherwise compute xt()
-    for (auto it = aet.begin(); it != aet.end();) {
+    for (auto it = aet.aet_list.begin(); it != aet.aet_list.end();) {
       if (it->top.y == yb) {
         // Copy bundle head state to the adjacent tail edge if required
-        if ((it != aet.begin() &&
+        if ((it != aet.aet_list.begin() &&
              it->bstate[BELOW] == bundle_state::BUNDLE_HEAD) &&
             std::prev(it)->bstate[BELOW] == bundle_state::BUNDLE_TAIL) {
           std::prev(it)->outp[BELOW] = it->outp[BELOW];
           std::prev(it)->bstate[BELOW] = bundle_state::UNBUNDLED;
 
-          if (std::prev(it) != aet.begin() &&
+          if (std::prev(it) != aet.aet_list.begin() &&
               std::prev(std::prev(it))->bstate[BELOW] ==
                   bundle_state::BUNDLE_TAIL) {
             std::prev(it)->bstate[BELOW] = bundle_state::BUNDLE_HEAD;
           }
         }
 
-        it = aet.erase(it);
+        it = aet.aet_list.erase(it);
       } else {
         // 更新 xtop
         if (it->top.y == yt) {
@@ -706,20 +668,20 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
 
     if (scanbeam < sbt.size()) {
       // SCANBEAM INTERIOR PROCESSING
-      build_intersection_table(&it, aet, dy);
+      build_intersection_table(&it, aet.aet_list, dy);
 
-      /* Process each node in the intersection table */
+      // Process each node in the intersection table
       for (intersect = it; intersect; intersect = intersect->next) {
         gpc_edge_node *e0 = intersect->ie[0];
         gpc_edge_node *e1 = intersect->ie[1];
 
-        /* Only generate output for contributing intersections */
+        // Only generate output for contributing intersections
         if ((e0->bundle[ABOVE][CLIP] || e0->bundle[ABOVE][SUBJ]) &&
             (e1->bundle[ABOVE][CLIP] || e1->bundle[ABOVE][SUBJ])) {
           p = e0->outp[ABOVE];
           q = e1->outp[ABOVE];
-          ix = intersect->point.x;
-          iy = intersect->point.y + yb;
+          double ix = intersect->point.x;
+          double iy = intersect->point.y + yb;
 
           in[CLIP] = (e0->bundle[ABOVE][CLIP] && !e0->bside[CLIP]) ||
                      (e1->bundle[ABOVE][CLIP] && e1->bside[CLIP]) ||
@@ -730,7 +692,8 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
                      (!e0->bundle[ABOVE][SUBJ] && !e1->bundle[ABOVE][SUBJ] &&
                       e0->bside[SUBJ] && e1->bside[SUBJ]);
 
-          /* Determine quadrant occupancies */
+          // Determine quadrant occupancies
+          int bl, br, tl, tr;
           switch (op) {
           case gpc_op::GPC_DIFF:
           case gpc_op::GPC_INT:
@@ -839,10 +802,10 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
             break;
           default:
             break;
-          } /* End of switch */
-        }   /* End of contributing intersection conditional */
+          } // End of switch
+        }   // End of contributing intersection conditional
 
-        /* Swap bundle sides in response to edge crossing */
+        // Swap bundle sides in response to edge crossing
         if (e0->bundle[ABOVE][CLIP])
           e1->bside[CLIP] = !e1->bside[CLIP];
         if (e1->bundle[ABOVE][CLIP])
@@ -852,13 +815,13 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
         if (e1->bundle[ABOVE][SUBJ])
           e0->bside[SUBJ] = !e0->bside[SUBJ];
 
-        /* Swap the edge bundles in the aet */
-        swap_intersecting_edge_bundles(aet, intersect);
+        // Swap the edge bundles in the aet.aet_list.
+        swap_intersecting_edge_bundles(aet.aet_list, intersect);
 
-      } /* End of IT loop*/
+      } // End of IT loop
 
       // Prepare for next scanbeam
-      for (auto it = aet.begin(); it != aet.end();) {
+      for (auto it = aet.aet_list.begin(); it != aet.aet_list.end();) {
         gpc_edge_node *succ_edge = it->succ;
 
         if (it->top.y == yt && succ_edge) {
@@ -868,8 +831,8 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
           succ_edge->bundle[BELOW][CLIP] = it->bundle[ABOVE][CLIP];
           succ_edge->bundle[BELOW][SUBJ] = it->bundle[ABOVE][SUBJ];
 
-          aet.insert(it, *succ_edge);
-          it = aet.erase(it);
+          aet.aet_list.insert(it, *succ_edge);
+          it = aet.aet_list.erase(it);
         } else {
           // Update this edge
           it->xb(it->xt());
@@ -888,12 +851,12 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
     }
   } // END OF SCANBEAM PROCESSING
 
-  /* Generate result polygon from out_poly */
+  // Generate result polygon from out_poly
   if (count_contours(out_poly) > 0) {
     result.hole.resize(count_contours(out_poly));
     result.contour.resize(count_contours(out_poly));
 
-    c = 0;
+    int c = 0;
     for (poly = out_poly; poly; poly = npoly) {
       npoly = poly->next;
       if (poly->active) {
@@ -901,9 +864,11 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
 
         result.contour[c].vertex.resize(poly->active);
 
-        v = result.contour[c].vertex.size() - 1;
-        for (vtx = poly->proxy->v[LEFT]; vtx; vtx = nv) {
-          nv = vtx->next;
+        int v = result.contour[c].vertex.size() - 1;
+
+        vertex_node *nv = nullptr;
+        for (vertex_node *vtx = poly->proxy->v[LEFT]; vtx; vtx = nv) {
+          vertex_node *nv = vtx->next;
 
           result.contour[c].vertex[v].x = vtx->x;
           result.contour[c].vertex[v].y = vtx->y;
@@ -922,7 +887,7 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
     }
   }
 
-  /* Tidy up */
+  // Tidy up
   reset_it(&it);
 }
 
@@ -935,9 +900,3 @@ void gpc_polygon_to_tristrip(gpc_polygon *s, gpc_tristrip *t) {
 }
 
 } // namespace gpc
-
-/*
-===========================================================================
-                           End of file: gpc.c
-===========================================================================
-*/
