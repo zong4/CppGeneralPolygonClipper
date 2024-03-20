@@ -1,26 +1,10 @@
 ﻿#pragma once
 
-#include "gpc_edge_node.hpp"
+#include "../geometry/gpc_edge_node.hpp"
 #include "gpc_macros.hpp"
-#include "gpc_vertex_list.hpp"
+#include "../geometry/gpc_vertex_list.hpp"
 
 namespace gpc {
-
-#ifndef TRUE
-#define FALSE 0
-#define TRUE 1
-#endif
-
-constexpr bool LEFT = 0;
-constexpr bool RIGHT = 1;
-
-constexpr bool ABOVE = 0;
-constexpr bool BELOW = 1;
-
-constexpr bool CLIP = 0;
-constexpr bool SUBJ = 1;
-
-#define INVERT_TRISTRIPS FALSE
 
 inline int prev_index(int i, int n) { return (i - 1 + n) % n; }
 inline int next_index(int i, int n) { return (i + 1) % n; }

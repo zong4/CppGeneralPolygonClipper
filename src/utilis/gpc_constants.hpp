@@ -6,6 +6,22 @@
 
 namespace gpc {
 
+#ifndef TRUE
+#define FALSE 0
+#define TRUE 1
+#endif
+
+constexpr bool LEFT = 0;
+constexpr bool RIGHT = 1;
+
+constexpr bool ABOVE = 0;
+constexpr bool BELOW = 1;
+
+constexpr bool CLIP = 0;
+constexpr bool SUBJ = 1;
+
+#define INVERT_TRISTRIPS FALSE
+
 const std::string GPC_VERSION = "2.33";
 const std::string CPP_GPC_VERSION = "1.00";
 
