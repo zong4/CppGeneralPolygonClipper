@@ -3,7 +3,7 @@
 #include <cmath>
 #include <float.h>
 
-/* Increase GPC_EPSILON to encourage merging of near coincident edges    */
+// Increase GPC_EPSILON to encourage merging of near coincident edges
 const double GPC_EPSILON = DBL_EPSILON;
 
 namespace gpc {

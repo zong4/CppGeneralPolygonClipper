@@ -7,11 +7,11 @@
 
 namespace gpc {
 
-/* Polygon set structure             */
+// Polygon set structure
 class gpc_polygon {
 public:
-  std::vector<bool> hole;               /* Hole / external contour flags     */
-  std::vector<gpc_vertex_list> contour; /* Contour array pointer */
+  std::vector<bool> hole;               // Hole / external contour flags
+  std::vector<gpc_vertex_list> contour; // Contour array pointer
 
 public:
   gpc_polygon() = default;

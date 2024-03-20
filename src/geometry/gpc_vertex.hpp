@@ -5,11 +5,11 @@
 
 namespace gpc {
 
-/* Polygon vertex structure          */
+// Polygon vertex structure
 class gpc_vertex {
 public:
-  double x = 0.0; /* Vertex x component                */
-  double y = 0.0; /* vertex y component                */
+  double x = 0.0; // Vertex x component
+  double y = 0.0; // vertex y component
 
 public:
   gpc_vertex() = default;

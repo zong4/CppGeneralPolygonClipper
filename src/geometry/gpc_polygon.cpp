@@ -105,7 +105,7 @@ void gpc::minimax_test_diff(const gpc::gpc_polygon &subj,
     }
 
     if (!overlap) {
-      /* Flag non contributing status by negating vertex count */
+      // Flag non contributing status by negating vertex count
       clip.contour[c].is_contributing = false;
     }
   }

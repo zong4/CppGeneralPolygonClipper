@@ -4,10 +4,10 @@
 
 namespace gpc {
 
-/* Tristrip set structure            */
+// Tristrip set structure
 class gpc_tristrip {
 public:
-  std::vector<gpc_vertex_list> strip; /* Tristrip array pointer            */
+  std::vector<gpc_vertex_list> strip; // Tristrip array pointer
 };
 
 } // namespace gpc

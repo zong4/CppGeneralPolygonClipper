@@ -11,12 +11,6 @@ typedef struct st_shape /* Sorted edge table                 */
   struct st_shape *prev; /* Previous edge in sorted list      */
 } st_node;
 
-/*
-===========================================================================
-                             Private Functions
-===========================================================================
-*/
-
 static void reset_it(it_node **it) {
   it_node *itn;
 
@@ -27,40 +21,27 @@ static void reset_it(it_node **it) {
   }
 }
 
-static void add_edge_to_aet(gpc_edge_node **aet, gpc_edge_node *edge,
+static void add_edge_to_aet(std::list<gpc_edge_node> &aet, gpc_edge_node edge,
                             gpc_edge_node *prev) {
-  if (!*aet) {
-    /* Append edge onto the tail end of the AET */
-    *aet = edge;
-    edge->prev = prev;
-    edge->next = nullptr;
-  } else {
-    /* Do primary sort on the xb field */
-    if (edge->xb() < (*aet)->xb()) {
-      /* Insert edge here (before the AET edge) */
-      edge->prev = prev;
-      edge->next = *aet;
-      (*aet)->prev = edge;
-      *aet = edge;
-    } else {
-      if (edge->xb() == (*aet)->xb()) {
-        /* Do secondary sort on the dx field */
-        if (edge->dx < (*aet)->dx) {
-          /* Insert edge here (before the AET edge) */
-          edge->prev = prev;
-          edge->next = *aet;
-          (*aet)->prev = edge;
-          *aet = edge;
-        } else {
-          /* Head further into the AET */
-          add_edge_to_aet(&((*aet)->next), edge, *aet);
-        }
-      } else {
-        /* Head further into the AET */
-        add_edge_to_aet(&((*aet)->next), edge, *aet);
+
+  if (aet.empty()) {
+    aet.push_back(edge);
+    return;
+  }
+
+  for (auto it = aet.begin(); it != aet.end(); ++it) {
+    if (edge.xb() < it->xb()) {
+      aet.insert(it, edge);
+      return;
+    } else if (edge.xb() == it->xb()) {
+      if (edge.dx < it->dx) {
+        aet.insert(it, edge);
+        return;
       }
     }
   }
+
+  aet.push_back(edge);
 }
 
 static void add_intersection(it_node **it, gpc_edge_node *edge0,
@@ -133,8 +114,8 @@ static void add_st_edge(st_node **st, it_node **it, gpc_edge_node *edge,
   }
 }
 
-static void build_intersection_table(it_node **it, gpc_edge_node *aet,
-                                     double dy) {
+static void build_intersection_table(it_node **it,
+                                     std::list<gpc_edge_node> &aet, double dy) {
   st_node *st, *stp;
   gpc_edge_node *edge;
 
@@ -143,10 +124,10 @@ static void build_intersection_table(it_node **it, gpc_edge_node *aet,
   st = nullptr;
 
   /* Process each AET edge */
-  for (edge = aet; edge; edge = edge->next) {
-    if ((edge->bstate[ABOVE] == bundle_state::BUNDLE_HEAD) ||
-        edge->bundle[ABOVE][CLIP] || edge->bundle[ABOVE][SUBJ])
-      add_st_edge(&st, it, edge, dy);
+  for (auto &&edge : aet) {
+    if ((edge.bstate[ABOVE] == bundle_state::BUNDLE_HEAD) ||
+        edge.bundle[ABOVE][CLIP] || edge.bundle[ABOVE][SUBJ])
+      add_st_edge(&st, it, &edge, dy);
   }
 
   /* Free the sorted edge table */
@@ -157,81 +138,53 @@ static void build_intersection_table(it_node **it, gpc_edge_node *aet,
   }
 }
 
-static void swap_intersecting_edge_bundles(gpc_edge_node **aet,
+static void swap_intersecting_edge_bundles(std::list<gpc_edge_node> &aet,
                                            it_node *intersect) {
   gpc_edge_node *e0 = intersect->ie[0];
   gpc_edge_node *e1 = intersect->ie[1];
-  gpc_edge_node *e0t = e0;
-  gpc_edge_node *e1t = e1;
-  gpc_edge_node *e0n = e0->next;
-  gpc_edge_node *e1n = e1->next;
 
-  // Find the node before the e0 bundle
-  gpc_edge_node *e0p = e0->prev;
-  if (e0->bstate[ABOVE] == bundle_state::BUNDLE_HEAD) {
-    do {
-      e0t = e0p;
-      e0p = e0p->prev;
-    } while (e0p && (e0p->bstate[ABOVE] == bundle_state::BUNDLE_TAIL));
-  }
+  // Find the iterators for e0 and e1 in the list
+  auto e0_it = std::find(aet.begin(), aet.end(), *e0);
+  auto e1_it = std::find(aet.begin(), aet.end(), *e1);
 
-  // Find the node before the e1 bundle
-  gpc_edge_node *e1p = e1->prev;
-  if (e1->bstate[ABOVE] == bundle_state::BUNDLE_HEAD) {
-    do {
-      e1t = e1p;
-      e1p = e1p->prev;
-    } while (e1p && (e1p->bstate[ABOVE] == bundle_state::BUNDLE_TAIL));
-  }
-
-  // Swap the e0p and e1p links
-  if (e0p) {
-    if (e1p) {
-      if (e0p != e1) {
-        e0p->next = e1t;
-        e1t->prev = e0p;
-      }
-      if (e1p != e0) {
-        e1p->next = e0t;
-        e0t->prev = e1p;
-      }
-    } else {
-      if (e0p != e1) {
-        e0p->next = e1t;
-        e1t->prev = e0p;
-      }
-      *aet = e0t;
-      e0t->prev = nullptr;
+  // Check if e0 and e1 are found in the list
+  if (e0_it != aet.end() && e1_it != aet.end()) {
+    // Find the iterator before the e0 bundle
+    auto e0p_it = e0_it;
+    if (e0_it != aet.begin() &&
+        e0->bstate[ABOVE] == bundle_state::BUNDLE_HEAD) {
+      do {
+        e0p_it = std::prev(e0p_it);
+      } while (e0p_it != aet.begin() &&
+               e0p_it->bstate[ABOVE] == bundle_state::BUNDLE_TAIL);
     }
-  } else {
-    if (e1p != e0) {
-      e1p->next = e0t;
-      e0t->prev = e1p;
-    }
-    *aet = e1t;
-    e1t->prev = nullptr;
-  }
 
-  // Re-link after e0
-  if (e0p != e1) {
-    e0->next = e1n;
-    if (e1n) {
-      e1n->prev = e0;
+    // Find the iterator before the e1 bundle
+    auto e1p_it = e1_it;
+    if (e1_it != aet.begin() &&
+        e1->bstate[ABOVE] == bundle_state::BUNDLE_HEAD) {
+      do {
+        e1p_it = std::prev(e1p_it);
+      } while (e1p_it != aet.begin() &&
+               e1p_it->bstate[ABOVE] == bundle_state::BUNDLE_TAIL);
     }
-  } else {
-    e0->next = e1t;
-    e1t->prev = e0;
-  }
 
-  // Re-link after e1
-  if (e1p != e0) {
-    e1->next = e0n;
-    if (e0n) {
-      e0n->prev = e1;
+    // Swap the e0p and e1p links
+    if (e0p_it != e1_it) {
+      std::iter_swap(e0p_it, e1p_it);
     }
-  } else {
-    e1->next = e0t;
-    e0t->prev = e1;
+
+    // Re-link after e0
+    if (std::next(e0_it) != e1_it) {
+      aet.insert(std::next(e0_it), *e1_it);
+      aet.erase(e1_it);
+    }
+
+    // Re-link after e1
+    if (std::next(e1_it) != e0_it) {
+      aet.insert(std::next(e1_it), *e0_it);
+      aet.erase(e0_it);
+    }
   }
 }
 
@@ -458,8 +411,6 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
     parity[CLIP] = RIGHT;
 
   it_node *it = nullptr, *intersect;
-  gpc_edge_node *edge;
-  gpc_edge_node *aet = nullptr;
   polygon_node *out_poly = nullptr, *p, *q, *poly, *npoly;
   vertex_node *vtx, *nv;
   int in[2];
@@ -470,6 +421,7 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
   /* 处理每个扫描线 */
   int scanbeam = 0;
   polygon_node *cf = nullptr; // TODO:
+  std::list<gpc_edge_node> aet;
   while (scanbeam < sbt.size()) {
     /* 设置扫描线的底部和顶部 */
     double yb = sbt[scanbeam++];
@@ -484,14 +436,14 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
     double yt = sbt[scanbeam];
     double dy = yt - yb;
 
-    /* === 扫描线边界处理 ================================ */
+    // 扫描线边界处理
 
     /* 将从这个局部最小值开始的边添加到 AET 中 */
     if (!lmt.lmt_list.empty()) {
       if (lmt.lmt_list.front().first == yb) {
         /* Add edges starting at this local minimum to the AET */
         for (auto &&edge : lmt.lmt_list.front().second) {
-          add_edge_to_aet(&aet, &edge, nullptr); // TODO:
+          add_edge_to_aet(aet, edge, nullptr); // TODO:
         }
 
         lmt.lmt_list.pop_front(); // 移动到下一个局部最小值
@@ -503,51 +455,47 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
 
     /* 在 AET 中创建捆绑 */
     /* 为第一条边设置捆绑字段 */
-    aet->bundle[ABOVE][aet->type] =
-        (aet->top.y != yb); // 如果边的顶部不在当前扫描线上，则设置为 TRUE
-    aet->bundle[ABOVE][!aet->type] = FALSE;
-    aet->bstate[ABOVE] = bundle_state::UNBUNDLED;
+    aet.front().bundle[ABOVE][aet.front().type] =
+        (aet.front().top.y !=
+         yb); // 如果边的顶部不在当前扫描线上，则设置为 TRUE
+    aet.front().bundle[ABOVE][!aet.front().type] = FALSE;
+    aet.front().bstate[ABOVE] = bundle_state::UNBUNDLED;
 
-    gpc_edge_node *e0 = aet;
-    for (gpc_edge_node *next_edge = aet->next; next_edge;
-         next_edge = next_edge->next) {
+    for (auto it = std::next(aet.begin()); it != aet.end(); ++it) {
       /* Set up bundle fields of next edge */
-      next_edge->bundle[ABOVE][next_edge->type] = (next_edge->top.y != yb);
-      next_edge->bundle[ABOVE][!next_edge->type] = FALSE;
-      next_edge->bstate[ABOVE] = bundle_state::UNBUNDLED;
+      it->bundle[ABOVE][it->type] = (it->top.y != yb);
+      it->bundle[ABOVE][!it->type] = FALSE;
+      it->bstate[ABOVE] = bundle_state::UNBUNDLED;
 
       /* 如果边在扫描线边界以上且与前一条边重合，则捆绑边 */
-      if (next_edge->bundle[ABOVE][next_edge->type]) {
-        if (equal(e0->xb(), next_edge->xb()) && equal(e0->dx, next_edge->dx) &&
-            (e0->top.y != yb)) {
-          next_edge->bundle[ABOVE][next_edge->type] ^=
-              e0->bundle[ABOVE][next_edge->type];
-          next_edge->bundle[ABOVE][!next_edge->type] =
-              e0->bundle[ABOVE][!next_edge->type];
-          next_edge->bstate[ABOVE] = bundle_state::BUNDLE_HEAD;
-          e0->bundle[ABOVE][CLIP] = FALSE;
-          e0->bundle[ABOVE][SUBJ] = FALSE;
-          e0->bstate[ABOVE] = bundle_state::BUNDLE_TAIL;
-        }
+      if (it->bundle[ABOVE][it->type]) {
+        if (equal(std::prev(it)->xb(), it->xb()) &&
+            equal(std::prev(it)->dx, it->dx) && (std::prev(it)->top.y != yb)) {
+          it->bundle[ABOVE][it->type] ^= std::prev(it)->bundle[ABOVE][it->type];
+          it->bundle[ABOVE][!it->type] =
+              std::prev(it)->bundle[ABOVE][!it->type];
+          it->bstate[ABOVE] = bundle_state::BUNDLE_HEAD;
 
-        e0 = next_edge;
+          std::prev(it)->bundle[ABOVE][CLIP] = FALSE;
+          std::prev(it)->bundle[ABOVE][SUBJ] = FALSE;
+          std::prev(it)->bstate[ABOVE] = bundle_state::BUNDLE_TAIL;
+        }
       }
     }
 
     int exists[2];
     h_state horiz[2] = {h_state::NH,
                         h_state::NH}; // 设置多边形的水平状态为非水平
+
     /* 在此扫描线边界处理每条边 */
-    for (edge = aet; edge; edge = edge->next) {
-      exists[CLIP] =
-          edge->bundle[ABOVE][CLIP] + (edge->bundle[BELOW][CLIP] << 1);
-      exists[SUBJ] =
-          edge->bundle[ABOVE][SUBJ] + (edge->bundle[BELOW][SUBJ] << 1);
+    for (auto &&edge : aet) {
+      exists[CLIP] = edge.bundle[ABOVE][CLIP] + (edge.bundle[BELOW][CLIP] << 1);
+      exists[SUBJ] = edge.bundle[ABOVE][SUBJ] + (edge.bundle[BELOW][SUBJ] << 1);
 
       if (exists[CLIP] || exists[SUBJ]) {
         /* 设置边的边界侧 */
-        edge->bside[CLIP] = parity[CLIP];
-        edge->bside[SUBJ] = parity[SUBJ];
+        edge.bside[CLIP] = parity[CLIP];
+        edge.bside[SUBJ] = parity[SUBJ];
 
         /* Determine contributing status and quadrant occupancies */
         switch (op) {
@@ -557,48 +505,60 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
               (exists[CLIP] && (parity[SUBJ] || horiz[SUBJ])) ||
               (exists[SUBJ] && (parity[CLIP] || horiz[CLIP])) ||
               (exists[CLIP] && exists[SUBJ] && (parity[CLIP] == parity[SUBJ]));
+
           br = (parity[CLIP]) && (parity[SUBJ]);
-          bl = (parity[CLIP] ^ edge->bundle[ABOVE][CLIP]) &&
-               (parity[SUBJ] ^ edge->bundle[ABOVE][SUBJ]);
+
+          bl = (parity[CLIP] ^ edge.bundle[ABOVE][CLIP]) &&
+               (parity[SUBJ] ^ edge.bundle[ABOVE][SUBJ]);
+
           tr = (parity[CLIP] ^ (horiz[CLIP] != h_state::NH)) &&
                (parity[SUBJ] ^ (horiz[SUBJ] != h_state::NH));
+
           tl = (parity[CLIP] ^ (horiz[CLIP] != h_state::NH) ^
-                edge->bundle[BELOW][CLIP]) &&
+                edge.bundle[BELOW][CLIP]) &&
                (parity[SUBJ] ^ (horiz[SUBJ] != h_state::NH) ^
-                edge->bundle[BELOW][SUBJ]);
+                edge.bundle[BELOW][SUBJ]);
           break;
         case gpc_op::GPC_XOR:
           contributing = exists[CLIP] || exists[SUBJ];
+
           br = (parity[CLIP]) ^ (parity[SUBJ]);
-          bl = (parity[CLIP] ^ edge->bundle[ABOVE][CLIP]) ^
-               (parity[SUBJ] ^ edge->bundle[ABOVE][SUBJ]);
+
+          bl = (parity[CLIP] ^ edge.bundle[ABOVE][CLIP]) ^
+               (parity[SUBJ] ^ edge.bundle[ABOVE][SUBJ]);
+
           tr = (parity[CLIP] ^ (horiz[CLIP] != h_state::NH)) ^
                (parity[SUBJ] ^ (horiz[SUBJ] != h_state::NH));
+
           tl = (parity[CLIP] ^ (horiz[CLIP] != h_state::NH) ^
-                edge->bundle[BELOW][CLIP]) ^
+                edge.bundle[BELOW][CLIP]) ^
                (parity[SUBJ] ^ (horiz[SUBJ] != h_state::NH) ^
-                edge->bundle[BELOW][SUBJ]);
+                edge.bundle[BELOW][SUBJ]);
           break;
         case gpc_op::GPC_UNION:
           contributing =
               (exists[CLIP] && (!parity[SUBJ] || horiz[SUBJ])) ||
               (exists[SUBJ] && (!parity[CLIP] || horiz[CLIP])) ||
               (exists[CLIP] && exists[SUBJ] && (parity[CLIP] == parity[SUBJ]));
+
           br = (parity[CLIP]) || (parity[SUBJ]);
-          bl = (parity[CLIP] ^ edge->bundle[ABOVE][CLIP]) ||
-               (parity[SUBJ] ^ edge->bundle[ABOVE][SUBJ]);
+
+          bl = (parity[CLIP] ^ edge.bundle[ABOVE][CLIP]) ||
+               (parity[SUBJ] ^ edge.bundle[ABOVE][SUBJ]);
+
           tr = (parity[CLIP] ^ (horiz[CLIP] != h_state::NH)) ||
                (parity[SUBJ] ^ (horiz[SUBJ] != h_state::NH));
+
           tl = (parity[CLIP] ^ (horiz[CLIP] != h_state::NH) ^
-                edge->bundle[BELOW][CLIP]) ||
+                edge.bundle[BELOW][CLIP]) ||
                (parity[SUBJ] ^ (horiz[SUBJ] != h_state::NH) ^
-                edge->bundle[BELOW][SUBJ]);
+                edge.bundle[BELOW][SUBJ]);
           break;
         }
 
         /* 更新奇偶性 */
-        parity[CLIP] ^= edge->bundle[ABOVE][CLIP];
-        parity[SUBJ] ^= edge->bundle[ABOVE][SUBJ];
+        parity[CLIP] ^= edge.bundle[ABOVE][CLIP];
+        parity[SUBJ] ^= edge.bundle[ABOVE][SUBJ];
 
         /* 更新水平状态 */
         if (exists[CLIP])
@@ -612,34 +572,36 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
             static_cast<vertex_type>(tr + (tl << 1) + (br << 2) + (bl << 3));
 
         if (contributing) {
-          xb = edge->xb();
+          xb = edge.xb();
 
           switch (vclass) {
           case vertex_type::EMN: // 外部最小值
           case vertex_type::IMN: // 内部最小值
-            add_local_min(&out_poly, edge, xb, yb);
+            add_local_min(&out_poly, &edge, xb, yb);
             px = xb;
-            cf = edge->outp[ABOVE];
+            cf = edge.outp[ABOVE];
             break;
           case vertex_type::ERI: // 外部右中间值
             if (xb != px) {
               add_right(cf, xb, yb);
               px = xb;
             }
-            edge->outp[ABOVE] = cf;
+
+            edge.outp[ABOVE] = cf;
             cf = nullptr;
             break;
           case vertex_type::ELI: // 外部左中间值
-            add_left(edge->outp[BELOW], xb, yb);
+            add_left(edge.outp[BELOW], xb, yb);
             px = xb;
-            cf = edge->outp[BELOW];
+            cf = edge.outp[BELOW];
             break;
           case vertex_type::EMX: // 外部最大值
             if (xb != px) {
               add_left(cf, xb, yb);
               px = xb;
             }
-            merge_right(cf, edge->outp[BELOW], out_poly);
+
+            merge_right(cf, edge.outp[BELOW], out_poly);
             cf = nullptr;
             break;
           case vertex_type::ILI: // 内部左中间值
@@ -647,54 +609,62 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
               add_left(cf, xb, yb);
               px = xb;
             }
-            edge->outp[ABOVE] = cf;
+
+            edge.outp[ABOVE] = cf;
             cf = nullptr;
             break;
           case vertex_type::IRI: // 内部右中间值
-            add_right(edge->outp[BELOW], xb, yb);
+            add_right(edge.outp[BELOW], xb, yb);
             px = xb;
-            cf = edge->outp[BELOW];
-            edge->outp[BELOW] = nullptr;
+            cf = edge.outp[BELOW];
+            edge.outp[BELOW] = nullptr;
             break;
           case vertex_type::IMX: // 内部最大值
             if (xb != px) {
               add_right(cf, xb, yb);
               px = xb;
             }
-            merge_left(cf, edge->outp[BELOW], out_poly);
+
+            merge_left(cf, edge.outp[BELOW], out_poly);
             cf = nullptr;
-            edge->outp[BELOW] = nullptr;
+            edge.outp[BELOW] = nullptr;
             break;
           case vertex_type::IMM: // 内部最大值和最小值
             if (xb != px) {
               add_right(cf, xb, yb);
               px = xb;
             }
-            merge_left(cf, edge->outp[BELOW], out_poly);
-            edge->outp[BELOW] = nullptr;
-            add_local_min(&out_poly, edge, xb, yb);
-            cf = edge->outp[ABOVE];
+
+            merge_left(cf, edge.outp[BELOW], out_poly);
+            edge.outp[BELOW] = nullptr;
+            add_local_min(&out_poly, &edge, xb, yb);
+            cf = edge.outp[ABOVE];
             break;
           case vertex_type::EMM: // 外部最大值和最小值
             if (xb != px) {
               add_left(cf, xb, yb);
               px = xb;
             }
-            merge_right(cf, edge->outp[BELOW], out_poly);
-            edge->outp[BELOW] = nullptr;
-            add_local_min(&out_poly, edge, xb, yb);
-            cf = edge->outp[ABOVE];
+
+            merge_right(cf, edge.outp[BELOW], out_poly);
+            edge.outp[BELOW] = nullptr;
+            add_local_min(&out_poly, &edge, xb, yb);
+            cf = edge.outp[ABOVE];
             break;
           case vertex_type::LED: // 左边界
-            if (edge->bot.y == yb)
-              add_left(edge->outp[BELOW], xb, yb);
-            edge->outp[ABOVE] = edge->outp[BELOW];
+            if (edge.bot.y == yb) {
+              add_left(edge.outp[BELOW], xb, yb);
+            }
+
+            edge.outp[ABOVE] = edge.outp[BELOW];
             px = xb;
             break;
           case vertex_type::RED: // 右边界
-            if (edge->bot.y == yb)
-              add_right(edge->outp[BELOW], xb, yb);
-            edge->outp[ABOVE] = edge->outp[BELOW];
+            if (edge.bot.y == yb) {
+              add_right(edge.outp[BELOW], xb, yb);
+            }
+
+            edge.outp[ABOVE] = edge.outp[BELOW];
             px = xb;
             break;
           default:
@@ -704,45 +674,43 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
       }     /* End of edge exists conditional */
     }       /* End of AET loop */
 
-    /* Delete terminating edges from the AET, otherwise compute xt() */
-    for (edge = aet; edge; edge = edge->next) {
-      if (edge->top.y == yb) {
-        gpc_edge_node *prev_edge = edge->prev;
-        gpc_edge_node *next_edge = edge->next;
-        if (prev_edge)
-          prev_edge->next = next_edge;
-        else
-          aet = next_edge;
-        if (next_edge)
-          next_edge->prev = prev_edge;
+    // Delete terminating edges from the AET, otherwise compute xt()
+    for (auto it = aet.begin(); it != aet.end();) {
+      if (it->top.y == yb) {
+        // Copy bundle head state to the adjacent tail edge if required
+        if ((it != aet.begin() &&
+             it->bstate[BELOW] == bundle_state::BUNDLE_HEAD) &&
+            std::prev(it)->bstate[BELOW] == bundle_state::BUNDLE_TAIL) {
+          std::prev(it)->outp[BELOW] = it->outp[BELOW];
+          std::prev(it)->bstate[BELOW] = bundle_state::UNBUNDLED;
 
-        /* Copy bundle head state to the adjacent tail edge if required */
-        if ((edge->bstate[BELOW] == bundle_state::BUNDLE_HEAD) && prev_edge) {
-          if (prev_edge->bstate[BELOW] == bundle_state::BUNDLE_TAIL) {
-            prev_edge->outp[BELOW] = edge->outp[BELOW];
-            prev_edge->bstate[BELOW] = bundle_state::UNBUNDLED;
-            if (prev_edge->prev)
-              if (prev_edge->prev->bstate[BELOW] == bundle_state::BUNDLE_TAIL)
-                prev_edge->bstate[BELOW] = bundle_state::BUNDLE_HEAD;
+          if (std::prev(it) != aet.begin() &&
+              std::prev(std::prev(it))->bstate[BELOW] ==
+                  bundle_state::BUNDLE_TAIL) {
+            std::prev(it)->bstate[BELOW] = bundle_state::BUNDLE_HEAD;
           }
         }
+
+        it = aet.erase(it);
       } else {
-        if (edge->top.y == yt) {
-          edge->xt(edge->top.x);
+        // 更新 xtop
+        if (it->top.y == yt) {
+          it->xt(it->top.x);
         } else {
-          edge->xt(edge->bot.x + edge->dx * (yt - edge->bot.y));
+          it->xt(it->bot.x + it->dx * (yt - it->bot.y));
         }
+
+        ++it;
       }
     }
 
     if (scanbeam < sbt.size()) {
-      /* === SCANBEAM INTERIOR PROCESSING ============================== */
-
+      // SCANBEAM INTERIOR PROCESSING
       build_intersection_table(&it, aet, dy);
 
       /* Process each node in the intersection table */
       for (intersect = it; intersect; intersect = intersect->next) {
-        e0 = intersect->ie[0];
+        gpc_edge_node *e0 = intersect->ie[0];
         gpc_edge_node *e1 = intersect->ie[1];
 
         /* Only generate output for contributing intersections */
@@ -885,45 +853,40 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
           e0->bside[SUBJ] = !e0->bside[SUBJ];
 
         /* Swap the edge bundles in the aet */
-        swap_intersecting_edge_bundles(&aet, intersect);
+        swap_intersecting_edge_bundles(aet, intersect);
 
       } /* End of IT loop*/
 
-      /* Prepare for next scanbeam */
-      for (edge = aet; edge; edge = edge->next) {
-        gpc_edge_node *succ_edge = edge->succ;
-        if ((edge->top.y == yt) && succ_edge) {
-          /* Replace AET edge by its successor */
-          succ_edge->outp[BELOW] = edge->outp[ABOVE];
-          succ_edge->bstate[BELOW] = edge->bstate[ABOVE];
-          succ_edge->bundle[BELOW][CLIP] = edge->bundle[ABOVE][CLIP];
-          succ_edge->bundle[BELOW][SUBJ] = edge->bundle[ABOVE][SUBJ];
+      // Prepare for next scanbeam
+      for (auto it = aet.begin(); it != aet.end();) {
+        gpc_edge_node *succ_edge = it->succ;
 
-          gpc_edge_node *prev_edge = edge->prev;
-          if (prev_edge)
-            prev_edge->next = succ_edge;
-          else
-            aet = succ_edge;
+        if (it->top.y == yt && succ_edge) {
+          // Replace AET edge by its successor
+          succ_edge->outp[BELOW] = it->outp[ABOVE];
+          succ_edge->bstate[BELOW] = it->bstate[ABOVE];
+          succ_edge->bundle[BELOW][CLIP] = it->bundle[ABOVE][CLIP];
+          succ_edge->bundle[BELOW][SUBJ] = it->bundle[ABOVE][SUBJ];
 
-          gpc_edge_node *next_edge = edge->next;
-          if (next_edge)
-            next_edge->prev = succ_edge;
-
-          succ_edge->prev = prev_edge;
-          succ_edge->next = next_edge;
+          aet.insert(it, *succ_edge);
+          it = aet.erase(it);
         } else {
-          /* Update this edge */
-          edge->outp[BELOW] = edge->outp[ABOVE];
-          edge->bstate[BELOW] = edge->bstate[ABOVE];
-          edge->bundle[BELOW][CLIP] = edge->bundle[ABOVE][CLIP];
-          edge->bundle[BELOW][SUBJ] = edge->bundle[ABOVE][SUBJ];
+          // Update this edge
+          it->xb(it->xt());
 
-          edge->xb(edge->xt());
+          it->outp[BELOW] = it->outp[ABOVE];
+          it->outp[ABOVE] = nullptr;
+
+          it->bstate[BELOW] = it->bstate[ABOVE];
+
+          it->bundle[BELOW][CLIP] = it->bundle[ABOVE][CLIP];
+          it->bundle[BELOW][SUBJ] = it->bundle[ABOVE][SUBJ];
+
+          ++it;
         }
-        edge->outp[ABOVE] = nullptr;
       }
     }
-  } /* === END OF SCANBEAM PROCESSING ================================== */
+  } // END OF SCANBEAM PROCESSING
 
   /* Generate result polygon from out_poly */
   if (count_contours(out_poly) > 0) {

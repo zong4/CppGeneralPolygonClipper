@@ -2,21 +2,15 @@
 
 namespace gpc {
 
-/* Set operation type                */
+// Set operation type
 enum class gpc_op {
-  GPC_DIFF, /* Difference                        */
-  GPC_INT,  /* Intersection                      */
-  GPC_XOR,  /* Exclusive or                      */
-  GPC_UNION /* Union                             */
+  GPC_DIFF, // Difference
+  GPC_INT,  // Intersection
+  GPC_XOR,  // Exclusive or
+  GPC_UNION // Union
 };
 
-/*
-===========================================================================
-                          Private Data Types
-===========================================================================
-*/
-
-/* Edge intersection classes         */
+// Edge intersection classes
 // bl br tl tr
 enum class vertex_type : int {
   NUL, // 空的非交点 0000
@@ -38,18 +32,18 @@ enum class vertex_type : int {
 };
 
 // 不改成 enum class，支持隐转
-/* Horizontal edge states            */
+// Horizontal edge states
 enum h_state {
-  NH, /* No horizontal edge                */
-  BH, /* Bottom horizontal edge            */
-  TH  /* Top horizontal edge               */
+  NH, // No horizontal edge
+  BH, // Bottom horizontal edge
+  TH  // Top horizontal edge
 };
 
-/* Edge bundle state                 */
+// Edge bundle state
 enum class bundle_state {
-  UNBUNDLED,   /* Isolated edge not within a bundle */
-  BUNDLE_HEAD, /* Bundle head node                  */
-  BUNDLE_TAIL  /* Passive bundle tail node          */
+  UNBUNDLED,   // Isolated edge not within a bundle
+  BUNDLE_HEAD, // Bundle head node
+  BUNDLE_TAIL  // Passive bundle tail node
 };
 
 } // namespace gpc
