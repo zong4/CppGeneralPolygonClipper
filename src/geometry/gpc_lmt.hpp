@@ -3,6 +3,7 @@
 #include <list>
 #include <vector>
 
+#include "../utilis/gpc_constants.hpp"
 #include "../utilis/gpc_macros.hpp"
 #include "gpc_edge_node.hpp"
 #include "gpc_polygon.hpp"

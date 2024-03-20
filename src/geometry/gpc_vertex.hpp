@@ -21,6 +21,10 @@ public:
     {
         return (x == rhs.x) && (y == rhs.y);
     }
+    inline bool operator!=(const gpc_vertex &rhs) const
+    {
+        return !(*this == rhs);
+    }
 
     friend std::istream &operator>>(std::istream &is, gpc_vertex &vertex)
     {
