@@ -4,7 +4,6 @@
 
 namespace gpc {
 
-// TODO:
 // Internal contour / tristrip type
 class polygon_node
 {

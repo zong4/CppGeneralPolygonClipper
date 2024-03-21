@@ -9,7 +9,7 @@ namespace gpc {
 class gpc_aet
 {
 public:
-    std::list<gpc_edge_node> aet_list; // TODO: ТаЉ
+    std::list<gpc_edge_node> aet_list; // TODO: 树
 
 public:
     gpc_aet() = default;

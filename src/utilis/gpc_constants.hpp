@@ -6,11 +6,6 @@
 
 namespace gpc {
 
-#ifndef TRUE
-#define FALSE 0
-#define TRUE 1
-#endif
-
 constexpr bool LEFT = 0;
 constexpr bool RIGHT = 1;
 

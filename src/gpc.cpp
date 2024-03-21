@@ -116,7 +116,7 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
         aet.aet_list.front().bundle[ABOVE][aet.aet_list.front().type] =
             (aet.aet_list.front().top.y !=
              yb); // 如果边的顶部不在当前扫描线上，则设置为 TRUE
-        aet.aet_list.front().bundle[ABOVE][!aet.aet_list.front().type] = FALSE;
+        aet.aet_list.front().bundle[ABOVE][!aet.aet_list.front().type] = false;
         aet.aet_list.front().bstate[ABOVE] = bundle_state::UNBUNDLED;
 
         for (auto it = std::next(aet.aet_list.begin());
@@ -124,7 +124,7 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
         {
             // Set up bundle fields of next edge
             it->bundle[ABOVE][it->type] = (it->top.y != yb);
-            it->bundle[ABOVE][!it->type] = FALSE;
+            it->bundle[ABOVE][!it->type] = false;
             it->bstate[ABOVE] = bundle_state::UNBUNDLED;
 
             // 如果边在扫描线边界以上且与前一条边重合，则捆绑边
@@ -140,8 +140,8 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
                         std::prev(it)->bundle[ABOVE][!it->type];
                     it->bstate[ABOVE] = bundle_state::BUNDLE_HEAD;
 
-                    std::prev(it)->bundle[ABOVE][CLIP] = FALSE;
-                    std::prev(it)->bundle[ABOVE][SUBJ] = FALSE;
+                    std::prev(it)->bundle[ABOVE][CLIP] = false;
+                    std::prev(it)->bundle[ABOVE][SUBJ] = false;
                     std::prev(it)->bstate[ABOVE] = bundle_state::BUNDLE_TAIL;
                 }
             }

@@ -100,8 +100,8 @@ void gpc::gpc_lmt::set_edge_table(int min, int num_edges,
 
     /* Build the next edge list */
     edge_table[min].bstate[BELOW] = bundle_state::UNBUNDLED;
-    edge_table[min].bundle[BELOW][CLIP] = FALSE;
-    edge_table[min].bundle[BELOW][SUBJ] = FALSE;
+    edge_table[min].bundle[BELOW][CLIP] = false;
+    edge_table[min].bundle[BELOW][SUBJ] = false;
 
     int v = min;
     for (int i = 0; i < num_edges; ++i)

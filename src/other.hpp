@@ -229,7 +229,7 @@ static void merge_left(polygon_node *p, polygon_node *q, polygon_node *list)
     polygon_node *target;
 
     // Label contour as a hole
-    q->proxy->hole = TRUE;
+    q->proxy->hole = true;
 
     if (p->proxy != q->proxy)
     {
@@ -246,7 +246,7 @@ static void merge_left(polygon_node *p, polygon_node *q, polygon_node *list)
         {
             if (list->proxy == target)
             {
-                list->active = FALSE;
+                list->active = false;
                 list->proxy = q->proxy;
             }
         }
@@ -266,7 +266,7 @@ static void merge_right(polygon_node *p, polygon_node *q, polygon_node *list)
     polygon_node *target;
 
     // Label contour as external
-    q->proxy->hole = FALSE;
+    q->proxy->hole = false;
 
     if (p->proxy != q->proxy)
     {
@@ -281,7 +281,7 @@ static void merge_right(polygon_node *p, polygon_node *q, polygon_node *list)
         {
             if (list->proxy == target)
             {
-                list->active = FALSE;
+                list->active = false;
                 list->proxy = q->proxy;
             }
         }
@@ -301,7 +301,7 @@ static void add_local_min(polygon_node **p, gpc_edge_node *edge, double x,
 
     // Initialise proxy to point to p itself
     (*p)->proxy = (*p);
-    (*p)->active = TRUE;
+    (*p)->active = true;
     (*p)->next = existing_min;
 
     // Make v[LEFT] and v[RIGHT] point to new vertex nv
