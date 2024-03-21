@@ -2,6 +2,11 @@
 
 bool gpc::gpc_vertex_list::operator==(const gpc::gpc_vertex_list &rhs) const
 {
+    if (is_hole != rhs.is_hole)
+    {
+        return false;
+    }
+
     if (num_vertices() != rhs.num_vertices())
     {
         return false;
@@ -21,6 +26,9 @@ bool gpc::gpc_vertex_list::operator==(const gpc::gpc_vertex_list &rhs) const
 std::istream &gpc::operator>>(std::istream &is,
                               gpc::gpc_vertex_list &vertex_list)
 {
+    bool is_hole;
+    is >> is_hole;
+
     int num_vertices;
     is >> num_vertices;
 
@@ -37,6 +45,7 @@ std::istream &gpc::operator>>(std::istream &is,
 std::ostream &gpc::operator<<(std::ostream &os,
                               const gpc::gpc_vertex_list &vertex_list)
 {
+    os << vertex_list.is_hole << "\n";
     os << vertex_list.num_vertices() << "\n";
 
     for (int i = 0; i < vertex_list.num_vertices(); ++i)
@@ -74,6 +83,7 @@ std::string gpc::gpc_vertex_list::to_string() const
 {
     std::stringstream ss;
 
+    ss << "hole: " << is_hole << "\n";
     ss << "gpc_vertex_list: " << num_vertices() << " vertices\n";
 
     for (int i = 0; i < num_vertices(); ++i)

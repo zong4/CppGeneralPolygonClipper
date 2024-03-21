@@ -1,4 +1,5 @@
 ﻿#include "gpc.hpp"
+#include <list>
 
 #include "other.hpp"
 
@@ -67,10 +68,12 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
     int parity[2] = {LEFT, LEFT};
     if (op == gpc_op::GPC_DIFF) parity[CLIP] = RIGHT;
 
+    // TODO:
     it_node *it = nullptr, *intersect;
-    polygon_node *out_poly = nullptr, *p, *q, *poly, *npoly;
     int in[2];
-    polygon_node *cf = nullptr; // TODO:
+
+    polygon_node *cf = nullptr;
+    std::vector<polygon_node *> out_poly;
 
     // 处理每个扫描线
     int scanbeam = 0;
@@ -258,14 +261,14 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
                     {
                         case vertex_type::EMN: // 外部最小值
                         case vertex_type::IMN: // 内部最小值
-                            add_local_min(&out_poly, &edge, xb, yb);
+                            add_local_min(out_poly, &edge, xb, yb);
                             px = xb;
                             cf = edge.outp[ABOVE];
                             break;
                         case vertex_type::ERI: // 外部右中间值
                             if (xb != px)
                             {
-                                add_right(cf, xb, yb);
+                                cf->add_right({xb, yb});
                                 px = xb;
                             }
 
@@ -273,14 +276,14 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
                             cf = nullptr;
                             break;
                         case vertex_type::ELI: // 外部左中间值
-                            add_left(edge.outp[BELOW], xb, yb);
+                            edge.outp[BELOW]->add_left({xb, yb});
                             px = xb;
                             cf = edge.outp[BELOW];
                             break;
                         case vertex_type::EMX: // 外部最大值
                             if (xb != px)
                             {
-                                add_left(cf, xb, yb);
+                                cf->add_left({xb, yb});
                                 px = xb;
                             }
 
@@ -290,7 +293,7 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
                         case vertex_type::ILI: // 内部左中间值
                             if (xb != px)
                             {
-                                add_left(cf, xb, yb);
+                                cf->add_left({xb, yb});
                                 px = xb;
                             }
 
@@ -298,7 +301,7 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
                             cf = nullptr;
                             break;
                         case vertex_type::IRI: // 内部右中间值
-                            add_right(edge.outp[BELOW], xb, yb);
+                            edge.outp[BELOW]->add_right({xb, yb});
                             px = xb;
                             cf = edge.outp[BELOW];
                             edge.outp[BELOW] = nullptr;
@@ -306,7 +309,7 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
                         case vertex_type::IMX: // 内部最大值
                             if (xb != px)
                             {
-                                add_right(cf, xb, yb);
+                                cf->add_right({xb, yb});
                                 px = xb;
                             }
 
@@ -317,31 +320,31 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
                         case vertex_type::IMM: // 内部最大值和最小值
                             if (xb != px)
                             {
-                                add_right(cf, xb, yb);
+                                cf->add_right({xb, yb});
                                 px = xb;
                             }
 
                             merge_left(cf, edge.outp[BELOW], out_poly);
                             edge.outp[BELOW] = nullptr;
-                            add_local_min(&out_poly, &edge, xb, yb);
+                            add_local_min(out_poly, &edge, xb, yb);
                             cf = edge.outp[ABOVE];
                             break;
                         case vertex_type::EMM: // 外部最大值和最小值
                             if (xb != px)
                             {
-                                add_left(cf, xb, yb);
+                                cf->add_left({xb, yb});
                                 px = xb;
                             }
 
                             merge_right(cf, edge.outp[BELOW], out_poly);
                             edge.outp[BELOW] = nullptr;
-                            add_local_min(&out_poly, &edge, xb, yb);
+                            add_local_min(out_poly, &edge, xb, yb);
                             cf = edge.outp[ABOVE];
                             break;
                         case vertex_type::LED: // 左边界
                             if (edge.bot.y == yb)
                             {
-                                add_left(edge.outp[BELOW], xb, yb);
+                                edge.outp[BELOW]->add_left({xb, yb});
                             }
 
                             edge.outp[ABOVE] = edge.outp[BELOW];
@@ -350,7 +353,7 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
                         case vertex_type::RED: // 右边界
                             if (edge.bot.y == yb)
                             {
-                                add_right(edge.outp[BELOW], xb, yb);
+                                edge.outp[BELOW]->add_right({xb, yb});
                             }
 
                             edge.outp[ABOVE] = edge.outp[BELOW];
@@ -367,7 +370,8 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
         {
             if (it->top.y == yb)
             {
-                // Copy bundle head state to the adjacent tail edge if required
+                // Copy bundle head state to the adjacent tail edge if
+                // required
                 if ((it != aet.aet_list.begin() &&
                      it->bstate[BELOW] == bundle_state::BUNDLE_HEAD) &&
                     std::prev(it)->bstate[BELOW] == bundle_state::BUNDLE_TAIL)
@@ -417,8 +421,8 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
                 if ((e0->bundle[ABOVE][CLIP] || e0->bundle[ABOVE][SUBJ]) &&
                     (e1->bundle[ABOVE][CLIP] || e1->bundle[ABOVE][SUBJ]))
                 {
-                    p = e0->outp[ABOVE];
-                    q = e1->outp[ABOVE];
+                    polygon_node *p = e0->outp[ABOVE];
+                    polygon_node *q = e1->outp[ABOVE];
 
                     double ix = intersect->point.x;
                     double iy = intersect->point.y + yb;
@@ -490,13 +494,13 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
                     switch (vclass)
                     {
                         case vertex_type::EMN:
-                            add_local_min(&out_poly, e0, ix, iy);
+                            add_local_min(out_poly, e0, ix, iy);
                             e1->outp[ABOVE] = e0->outp[ABOVE];
                             break;
                         case vertex_type::ERI:
                             if (p)
                             {
-                                add_right(p, ix, iy);
+                                p->add_right({ix, iy});
                                 e1->outp[ABOVE] = p;
                                 e0->outp[ABOVE] = nullptr;
                             }
@@ -504,7 +508,7 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
                         case vertex_type::ELI:
                             if (q)
                             {
-                                add_left(q, ix, iy);
+                                q->add_left({ix, iy});
                                 e0->outp[ABOVE] = q;
                                 e1->outp[ABOVE] = nullptr;
                             }
@@ -512,20 +516,20 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
                         case vertex_type::EMX:
                             if (p && q)
                             {
-                                add_left(p, ix, iy);
+                                p->add_left({ix, iy});
                                 merge_right(p, q, out_poly);
                                 e0->outp[ABOVE] = nullptr;
                                 e1->outp[ABOVE] = nullptr;
                             }
                             break;
                         case vertex_type::IMN:
-                            add_local_min(&out_poly, e0, ix, iy);
+                            add_local_min(out_poly, e0, ix, iy);
                             e1->outp[ABOVE] = e0->outp[ABOVE];
                             break;
                         case vertex_type::ILI:
                             if (p)
                             {
-                                add_left(p, ix, iy);
+                                p->add_left({ix, iy});
                                 e1->outp[ABOVE] = p;
                                 e0->outp[ABOVE] = nullptr;
                             }
@@ -533,7 +537,7 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
                         case vertex_type::IRI:
                             if (q)
                             {
-                                add_right(q, ix, iy);
+                                q->add_right({ix, iy});
                                 e0->outp[ABOVE] = q;
                                 e1->outp[ABOVE] = nullptr;
                             }
@@ -541,7 +545,7 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
                         case vertex_type::IMX:
                             if (p && q)
                             {
-                                add_right(p, ix, iy);
+                                p->add_right({ix, iy});
                                 merge_left(p, q, out_poly);
                                 e0->outp[ABOVE] = nullptr;
                                 e1->outp[ABOVE] = nullptr;
@@ -550,18 +554,18 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
                         case vertex_type::IMM:
                             if (p && q)
                             {
-                                add_right(p, ix, iy);
+                                p->add_right({ix, iy});
                                 merge_left(p, q, out_poly);
-                                add_local_min(&out_poly, e0, ix, iy);
+                                add_local_min(out_poly, e0, ix, iy);
                                 e1->outp[ABOVE] = e0->outp[ABOVE];
                             }
                             break;
                         case vertex_type::EMM:
                             if (p && q)
                             {
-                                add_left(p, ix, iy);
+                                p->add_left({ix, iy});
                                 merge_right(p, q, out_poly);
-                                add_local_min(&out_poly, e0, ix, iy);
+                                add_local_min(out_poly, e0, ix, iy);
                                 e1->outp[ABOVE] = e0->outp[ABOVE];
                             }
                             break;
@@ -634,29 +638,12 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
     // Generate result polygon from out_poly
     if (count_contours(out_poly) > 0)
     {
-        result.hole.resize(count_contours(out_poly));
-        result.contour.resize(count_contours(out_poly));
-
-        int c = 0;
-        for (poly = out_poly; poly; poly = npoly)
+        for (auto &&poly : out_poly)
         {
-            npoly = poly->next;
-            if (poly->active)
+            if (poly->vertex_list.is_contributing)
             {
-                result.hole[c] = poly->proxy->hole;
-                result.contour[c].vertexs = poly->proxy->vertex_list.vertexs;
-
-                ++c;
+                result.add_contour(poly->proxy->vertex_list.vertexs);
             }
-            delete poly;
-        }
-    }
-    else
-    {
-        for (poly = out_poly; poly; poly = npoly)
-        {
-            npoly = poly->next;
-            delete (poly);
         }
     }
 

@@ -1,13 +1,11 @@
 ﻿#include "gpc_polygon.hpp"
 
 gpc::gpc_polygon::gpc_polygon(
-    const std::vector<std::vector<gpc_vertex>> &in_contour,
-    const std::vector<bool> &in_hole)
+    const std::vector<std::vector<gpc_vertex>> &in_contour)
 {
     for (int i = 0; i < in_contour.size(); ++i)
     {
         contour.push_back(gpc_vertex_list(in_contour[i]));
-        hole.push_back(in_hole[i]);
     }
 }
 
@@ -20,7 +18,7 @@ bool gpc::gpc_polygon::operator==(const gpc::gpc_polygon &rhs) const
 
     for (int i = 0; i < num_contours(); ++i)
     {
-        if (hole[i] != rhs.hole[i] || contour[i] != rhs.contour[i])
+        if (contour[i] != rhs.contour[i])
         {
             return false;
         }
@@ -36,9 +34,6 @@ std::istream &gpc::operator>>(std::istream &is, gpc::gpc_polygon &polygon)
 
     for (int i = 0; i < num_contours; ++i)
     {
-        bool hole;
-        is >> hole;
-
         gpc_vertex_list vertex_list;
         is >> vertex_list;
 
@@ -47,7 +42,7 @@ std::istream &gpc::operator>>(std::istream &is, gpc::gpc_polygon &polygon)
             continue;
         }
 
-        polygon.add_contour(vertex_list, hole);
+        polygon.add_contour(vertex_list);
     }
 
     return is;
@@ -59,7 +54,6 @@ std::ostream &gpc::operator<<(std::ostream &os, const gpc::gpc_polygon &polygon)
 
     for (int i = 0; i < polygon.num_contours(); ++i)
     {
-        os << polygon.hole[i] << "\n";
         os << polygon.contour[i];
     }
 
@@ -68,11 +62,9 @@ std::ostream &gpc::operator<<(std::ostream &os, const gpc::gpc_polygon &polygon)
     return os;
 }
 
-void gpc::gpc_polygon::add_contour(const gpc_vertex_list &in_contour,
-                                   bool in_hole)
+void gpc::gpc_polygon::add_contour(const gpc_vertex_list &in_contour)
 {
     contour.push_back(in_contour);
-    hole.push_back(in_hole);
 }
 
 std::string gpc::gpc_polygon::to_string() const
@@ -84,8 +76,6 @@ std::string gpc::gpc_polygon::to_string() const
     for (int i = 0; i < num_contours(); ++i)
     {
         ss << "contour " << i << ":\n";
-        ss << "hole: " << hole[i] << "\n";
-
         ss << contour[i].to_string();
     }
 
@@ -186,11 +176,6 @@ bool gpc::equal_sort(const gpc::gpc_polygon &subj, const gpc::gpc_polygon &clip)
 
     for (int i = 0; i < subj.num_contours(); ++i)
     {
-        if (subj.hole[i] != clip.hole[i])
-        {
-            return false;
-        }
-
         std::vector<gpc_vertex> subj_vertex = subj.contour[i].vertexs;
         std::sort(subj_vertex.begin(), subj_vertex.end(),
                   [](const gpc_vertex &a, const gpc_vertex &b) {

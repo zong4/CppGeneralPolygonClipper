@@ -9,14 +9,11 @@ int main(int argc, char **argv)
     gpc::gpc_polygon subject_polygon;
     gpc::gpc_polygon clip_polygon;
 
-    subject_polygon.add_contour(
-        gpc::gpc_vertex_list(
-            {{0, 0}, {100, 0}, {100, 100}, {125, 125}, {-25, 125}, {0, 100}}),
-        false);
+    subject_polygon.add_contour(gpc::gpc_vertex_list(
+        {{0, 0}, {100, 0}, {100, 100}, {125, 125}, {-25, 125}, {0, 100}}));
 
     clip_polygon.add_contour(
-        gpc::gpc_vertex_list({{50, 50}, {150, 50}, {150, 150}, {50, 150}}),
-        false);
+        gpc::gpc_vertex_list({{50, 50}, {150, 50}, {150, 150}, {50, 150}}));
 
     gpc::gpc_polygon result_polygon;
     gpc::gpc_polygon_clip(gpc::gpc_op::GPC_DIFF, subject_polygon, clip_polygon,
@@ -29,11 +26,11 @@ int main(int argc, char **argv)
                                                        {50, 50},
                                                        {50, 125},
                                                        {-25, 125},
-                                                       {0, 100}}),
-                                 false);
+                                                       {0, 100}}));
 
-    std::cout << "result_polygon: " << result_polygon << std::endl;
-    std::cout << "expected_polygon: " << expected_polygon << std::endl;
+    std::cout << "result_polygon: " << result_polygon.to_string() << std::endl;
+    std::cout << "expected_polygon: " << expected_polygon.to_string()
+              << std::endl;
 
     testing::InitGoogleTest();
     return RUN_ALL_TESTS();

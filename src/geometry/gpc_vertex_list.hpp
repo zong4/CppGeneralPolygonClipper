@@ -12,12 +12,13 @@ class gpc_vertex_list
 {
 public:
     bool is_contributing = true;
+    bool is_hole = false;
     std::vector<gpc_vertex> vertexs; // Vertex array pointer
 
 public:
     gpc_vertex_list() = default;
-    gpc_vertex_list(const std::vector<gpc_vertex> &in_vertex)
-        : vertexs(in_vertex)
+    gpc_vertex_list(const std::vector<gpc_vertex> &in_vertex, bool hole = false)
+        : is_hole(hole), vertexs(in_vertex)
     {
     }
     ~gpc_vertex_list() = default;

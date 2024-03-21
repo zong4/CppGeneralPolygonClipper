@@ -11,19 +11,15 @@ namespace gpc {
 class gpc_polygon
 {
 public:
-    std::vector<bool> hole;               // Hole / external contour flags
     std::vector<gpc_vertex_list> contour; // Contour array pointer
 
 public:
     gpc_polygon() = default;
-    gpc_polygon(const std::vector<gpc_vertex_list> &in_contour,
-                const std::vector<bool> &in_hole)
-        : contour(in_contour),
-          hole(in_hole)
+    gpc_polygon(const std::vector<gpc_vertex_list> &in_contour)
+        : contour(in_contour)
     {
     }
-    gpc_polygon(const std::vector<std::vector<gpc_vertex>> &in_contour,
-                const std::vector<bool> &in_hole);
+    gpc_polygon(const std::vector<std::vector<gpc_vertex>> &in_contour);
     ~gpc_polygon() = default;
 
     inline int num_contours() const { return contour.size(); }
@@ -34,7 +30,7 @@ public:
     friend std::ostream &operator<<(std::ostream &os,
                                     const gpc_polygon &polygon);
 
-    void add_contour(const gpc_vertex_list &in_contour, bool in_hole = false);
+    void add_contour(const gpc_vertex_list &in_contour);
     std::vector<gpc_bbox> create_contour_bboxes() const;
 
     std::string to_string() const;
