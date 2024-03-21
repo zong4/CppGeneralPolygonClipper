@@ -1,12 +1,8 @@
 #pragma once
 
-#include "geometry/gpc_aet.hpp"
-#include "geometry/gpc_lmt.hpp"
-#include "geometry/gpc_tristrip.hpp"
 #include "geometry/it_node.hpp"
 #include "geometry/st_node.hpp"
 #include "utilis/gpc_constants.hpp"
-#include "utilis/gpc_math.hpp"
 
 namespace gpc {
 
@@ -194,50 +190,38 @@ static void swap_intersecting_edge_bundles(std::list<gpc_edge_node> &aet,
 
 static int count_contours(polygon_node *polygon)
 {
-    int nc, nv;
-    vertex_node *v, *nextv;
-
+    int nc;
     for (nc = 0; polygon; polygon = polygon->next)
+    {
         if (polygon->active)
         {
             // Count the vertices in the current contour
-            nv = 0;
-            for (v = polygon->proxy->v[LEFT]; v; v = v->next) nv++;
+            int nv = polygon->proxy->vertex_list.num_vertices();
 
             // Record valid vertex counts in the active field
             if (nv > 2)
             {
                 polygon->active = nv;
-                nc++;
+                ++nc;
             }
             else
             {
                 // Invalid contour: just free the heap
-                for (v = polygon->proxy->v[LEFT]; v; v = nextv)
-                {
-                    nextv = v->next;
-                    delete v;
-                }
+                polygon->proxy->vertex_list.vertexs.clear();
                 polygon->active = 0;
             }
         }
+    }
     return nc;
 }
 
 static void add_left(polygon_node *p, double x, double y)
 {
-    vertex_node *nv;
-
-    // Create a new vertex node and set its fields
-    MALLOC(nv, sizeof(vertex_node), "vertex node creation", vertex_node);
-    nv->x = x;
-    nv->y = y;
+    gpc_vertex nv(x, y);
 
     // Add vertex nv to the left end of the polygon's vertex list
-    nv->next = p->proxy->v[LEFT];
-
-    // Update proxy->[LEFT] to point to nv
-    p->proxy->v[LEFT] = nv;
+    p->proxy->vertex_list.vertexs.insert(p->proxy->vertex_list.vertexs.begin(),
+                                         nv);
 }
 
 static void merge_left(polygon_node *p, polygon_node *q, polygon_node *list)
@@ -250,11 +234,14 @@ static void merge_left(polygon_node *p, polygon_node *q, polygon_node *list)
     if (p->proxy != q->proxy)
     {
         // Assign p's vertex list to the left end of q's list
-        p->proxy->v[RIGHT]->next = q->proxy->v[LEFT];
-        q->proxy->v[LEFT] = p->proxy->v[LEFT];
+        p->proxy->vertex_list.vertexs.insert(
+            p->proxy->vertex_list.vertexs.end(),
+            q->proxy->vertex_list.vertexs.begin(),
+            q->proxy->vertex_list.vertexs.end());
+
+        q->proxy->vertex_list = p->proxy->vertex_list; // TODO:
 
         // Redirect any p->proxy references to q->proxy
-
         for (target = p->proxy; list; list = list->next)
         {
             if (list->proxy == target)
@@ -268,19 +255,10 @@ static void merge_left(polygon_node *p, polygon_node *q, polygon_node *list)
 
 static void add_right(polygon_node *p, double x, double y)
 {
-    vertex_node *nv;
-
-    // Create a new vertex node and set its fields
-    MALLOC(nv, sizeof(vertex_node), "vertex node creation", vertex_node);
-    nv->x = x;
-    nv->y = y;
-    nv->next = nullptr;
+    gpc_vertex nv(x, y);
 
     // Add vertex nv to the right end of the polygon's vertex list
-    p->proxy->v[RIGHT]->next = nv;
-
-    // Update proxy->v[RIGHT] to point to nv
-    p->proxy->v[RIGHT] = nv;
+    p->proxy->vertex_list.vertexs.push_back(nv);
 }
 
 static void merge_right(polygon_node *p, polygon_node *q, polygon_node *list)
@@ -293,8 +271,10 @@ static void merge_right(polygon_node *p, polygon_node *q, polygon_node *list)
     if (p->proxy != q->proxy)
     {
         // Assign p's vertex list to the right end of q's list
-        q->proxy->v[RIGHT]->next = p->proxy->v[LEFT];
-        q->proxy->v[RIGHT] = p->proxy->v[RIGHT];
+        q->proxy->vertex_list.vertexs.insert(
+            q->proxy->vertex_list.vertexs.end(),
+            p->proxy->vertex_list.vertexs.begin(),
+            p->proxy->vertex_list.vertexs.end());
 
         // Redirect any p->proxy references to q->proxy
         for (target = p->proxy; list; list = list->next)
@@ -312,17 +292,12 @@ static void add_local_min(polygon_node **p, gpc_edge_node *edge, double x,
                           double y)
 {
     polygon_node *existing_min;
-    vertex_node *nv;
 
     existing_min = *p;
 
-    MALLOC(*p, sizeof(polygon_node), "polygon node creation", polygon_node);
+    *p = new polygon_node;
 
-    // Create a new vertex node and set its fields
-    MALLOC(nv, sizeof(vertex_node), "vertex node creation", vertex_node);
-    nv->x = x;
-    nv->y = y;
-    nv->next = nullptr;
+    gpc_vertex nv(x, y);
 
     // Initialise proxy to point to p itself
     (*p)->proxy = (*p);
@@ -330,8 +305,7 @@ static void add_local_min(polygon_node **p, gpc_edge_node *edge, double x,
     (*p)->next = existing_min;
 
     // Make v[LEFT] and v[RIGHT] point to new vertex nv
-    (*p)->v[LEFT] = nv;
-    (*p)->v[RIGHT] = nv;
+    (*p)->vertex_list.vertexs.push_back(nv);
 
     // Assign polygon p to the edge
     edge->outp[ABOVE] = *p;
@@ -344,40 +318,6 @@ static int count_tristrips(polygon_node *tn)
     for (total = 0; tn; tn = tn->next)
         if (tn->active > 2) total++;
     return total;
-}
-
-static void add_vertex(vertex_node **t, double x, double y)
-{
-    if (!(*t))
-    {
-        MALLOC(*t, sizeof(vertex_node), "tristrip vertex creation",
-               vertex_node);
-        (*t)->x = x;
-        (*t)->y = y;
-        (*t)->next = nullptr;
-    }
-    else
-        // Head further down the list
-        add_vertex(&((*t)->next), x, y);
-}
-
-static void new_tristrip(polygon_node **tn, gpc_edge_node *edge, double x,
-                         double y)
-{
-    if (!(*tn))
-    {
-        MALLOC(*tn, sizeof(polygon_node), "tristrip node creation",
-               polygon_node);
-        (*tn)->next = nullptr;
-        (*tn)->v[LEFT] = nullptr;
-        (*tn)->v[RIGHT] = nullptr;
-        (*tn)->active = 1;
-        add_vertex(&((*tn)->v[LEFT]), x, y);
-        edge->outp[ABOVE] = *tn;
-    }
-    else
-        // Head further down the list
-        new_tristrip(&((*tn)->next), edge, x, y);
 }
 
 } // namespace gpc

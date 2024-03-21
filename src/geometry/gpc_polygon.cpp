@@ -191,7 +191,7 @@ bool gpc::equal_sort(const gpc::gpc_polygon &subj, const gpc::gpc_polygon &clip)
             return false;
         }
 
-        std::vector<gpc_vertex> subj_vertex = subj.contour[i].vertex;
+        std::vector<gpc_vertex> subj_vertex = subj.contour[i].vertexs;
         std::sort(subj_vertex.begin(), subj_vertex.end(),
                   [](const gpc_vertex &a, const gpc_vertex &b) {
                       if (a.x != b.x)
@@ -200,7 +200,7 @@ bool gpc::equal_sort(const gpc::gpc_polygon &subj, const gpc::gpc_polygon &clip)
                           return a.y < b.y;
                   });
 
-        std::vector<gpc_vertex> clip_vertex = clip.contour[i].vertex;
+        std::vector<gpc_vertex> clip_vertex = clip.contour[i].vertexs;
         std::sort(clip_vertex.begin(), clip_vertex.end(),
                   [](const gpc_vertex &a, const gpc_vertex &b) {
                       if (a.x != b.x)

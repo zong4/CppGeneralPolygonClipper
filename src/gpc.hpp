@@ -1,6 +1,9 @@
 ﻿#pragma once
 
-#include "other.hpp"
+#include "geometry/gpc_aet.hpp"
+#include "geometry/gpc_lmt.hpp"
+#include "geometry/gpc_tristrip.hpp"
+#include "utilis/gpc_math.hpp"
 
 namespace gpc {
 

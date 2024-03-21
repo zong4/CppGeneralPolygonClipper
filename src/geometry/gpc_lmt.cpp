@@ -38,12 +38,12 @@ void gpc::gpc_lmt::build_lmt(const gpc_polygon &p, bool type, gpc_op op)
         /* Perform contour optimisation */
         for (int i = 0; i < p.contour[c].num_vertices(); ++i)
         {
-            if (optimal(p.contour[c].vertex, i, p.contour[c].num_vertices()))
+            if (optimal(p.contour[c].vertexs, i, p.contour[c].num_vertices()))
             {
-                vertex_table.push_back(p.contour[c].vertex[i]);
+                vertex_table.push_back(p.contour[c].vertexs[i]);
 
                 /* Record vertex in the scanbeam table */
-                sbtree.push_back(p.contour[c].vertex[i].y);
+                sbtree.push_back(p.contour[c].vertexs[i].y);
             }
         }
 

@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include <list>
+
 #include "../utilis/gpc_enum.hpp"
 #include "gpc_vertex.hpp"
 #include "polygon_node.hpp"

@@ -12,17 +12,17 @@ class gpc_vertex_list
 {
 public:
     bool is_contributing = true;
-    std::vector<gpc_vertex> vertex; // Vertex array pointer
+    std::vector<gpc_vertex> vertexs; // Vertex array pointer
 
 public:
     gpc_vertex_list() = default;
     gpc_vertex_list(const std::vector<gpc_vertex> &in_vertex)
-        : vertex(in_vertex)
+        : vertexs(in_vertex)
     {
     }
     ~gpc_vertex_list() = default;
 
-    inline int num_vertices() const { return vertex.size(); }
+    inline int num_vertices() const { return vertexs.size(); }
 
     bool operator==(const gpc_vertex_list &rhs) const;
     inline bool operator!=(const gpc_vertex_list &rhs) const

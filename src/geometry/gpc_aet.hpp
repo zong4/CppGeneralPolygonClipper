@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <list>
 
@@ -9,7 +9,7 @@ namespace gpc {
 class gpc_aet
 {
 public:
-    std::list<gpc_edge_node> aet_list;
+    std::list<gpc_edge_node> aet_list; // TODO: ТаЉ
 
 public:
     gpc_aet() = default;

@@ -1,7 +1,5 @@
 ﻿#pragma once
 
-#include "../geometry/gpc_edge_node.hpp"
-#include "gpc_macros.hpp"
 #include "../geometry/gpc_vertex_list.hpp"
 
 namespace gpc {
@@ -12,8 +10,8 @@ inline int next_index(int i, int n) { return (i + 1) % n; }
 // 当前点是否需要被考虑
 inline bool optimal(const gpc_vertex_list &v, int i, int n)
 {
-    return (v.vertex[prev_index(i, n)].y != v.vertex[i].y) ||
-           (v.vertex[next_index(i, n)].y != v.vertex[i].y);
+    return (v.vertexs[prev_index(i, n)].y != v.vertexs[i].y) ||
+           (v.vertexs[next_index(i, n)].y != v.vertexs[i].y);
 }
 
 // 当前点是否是一个局部最小值, 左闭右开

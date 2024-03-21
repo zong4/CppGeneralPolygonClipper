@@ -358,9 +358,9 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
                             break;
                         default: break;
                     } // End of switch
-                }     // End of contributing conditional
-            }         // End of edge exists conditional
-        }             // End of AET loop
+                } // End of contributing conditional
+            } // End of edge exists conditional
+        } // End of AET loop
 
         // Delete terminating edges from the AET, otherwise compute xt()
         for (auto it = aet.aet_list.begin(); it != aet.aet_list.end();)
@@ -567,7 +567,7 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
                             break;
                         default: break;
                     } // End of switch
-                }     // End of contributing intersection conditional
+                } // End of contributing intersection conditional
 
                 // Swap bundle sides in response to edge crossing
                 if (e0->bundle[ABOVE][CLIP])
@@ -644,22 +644,8 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
             if (poly->active)
             {
                 result.hole[c] = poly->proxy->hole;
+                result.contour[c].vertexs = poly->proxy->vertex_list.vertexs;
 
-                result.contour[c].vertex.resize(poly->active);
-
-                int v = result.contour[c].vertex.size() - 1;
-
-                vertex_node *nv = nullptr;
-                for (vertex_node *vtx = poly->proxy->v[LEFT]; vtx; vtx = nv)
-                {
-                    nv = vtx->next;
-
-                    result.contour[c].vertex[v].x = vtx->x;
-                    result.contour[c].vertex[v].y = vtx->y;
-                    delete (vtx);
-
-                    --v;
-                }
                 ++c;
             }
             delete poly;

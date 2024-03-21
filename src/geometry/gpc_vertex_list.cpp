@@ -9,7 +9,7 @@ bool gpc::gpc_vertex_list::operator==(const gpc::gpc_vertex_list &rhs) const
 
     for (int i = 0; i < num_vertices(); ++i)
     {
-        if (vertex[i] != rhs.vertex[i])
+        if (vertexs[i] != rhs.vertexs[i])
         {
             return false;
         }
@@ -28,7 +28,7 @@ std::istream &gpc::operator>>(std::istream &is,
     {
         gpc_vertex vertex;
         is >> vertex;
-        vertex_list.vertex.push_back(vertex);
+        vertex_list.vertexs.push_back(vertex);
     }
 
     return is;
@@ -41,7 +41,7 @@ std::ostream &gpc::operator<<(std::ostream &os,
 
     for (int i = 0; i < vertex_list.num_vertices(); ++i)
     {
-        os << vertex_list.vertex[i] << "\n";
+        os << vertex_list.vertexs[i] << "\n";
     }
 
     return os;
@@ -53,18 +53,18 @@ gpc::gpc_bbox gpc::gpc_vertex_list::create_bbox() const
 
     if (num_vertices() > 0)
     {
-        bbox.xmin = vertex[0].x;
-        bbox.ymin = vertex[0].y;
-        bbox.xmax = vertex[0].x;
-        bbox.ymax = vertex[0].y;
+        bbox.xmin = vertexs[0].x;
+        bbox.ymin = vertexs[0].y;
+        bbox.xmax = vertexs[0].x;
+        bbox.ymax = vertexs[0].y;
     }
 
     for (int i = 1; i < num_vertices(); ++i)
     {
-        bbox.xmin = std::min(bbox.xmin, vertex[i].x);
-        bbox.ymin = std::min(bbox.ymin, vertex[i].y);
-        bbox.xmax = std::max(bbox.xmax, vertex[i].x);
-        bbox.ymax = std::max(bbox.ymax, vertex[i].y);
+        bbox.xmin = std::min(bbox.xmin, vertexs[i].x);
+        bbox.ymin = std::min(bbox.ymin, vertexs[i].y);
+        bbox.xmax = std::max(bbox.xmax, vertexs[i].x);
+        bbox.ymax = std::max(bbox.ymax, vertexs[i].y);
     }
 
     return bbox;
@@ -78,7 +78,7 @@ std::string gpc::gpc_vertex_list::to_string() const
 
     for (int i = 0; i < num_vertices(); ++i)
     {
-        ss << "vertex " << i << ": " << vertex[i].to_string() << "\n";
+        ss << "vertex " << i << ": " << vertexs[i].to_string() << "\n";
     }
 
     return ss.str();
