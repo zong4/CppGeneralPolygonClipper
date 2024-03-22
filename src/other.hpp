@@ -9,54 +9,33 @@
 
 namespace gpc {
 
-static void reset_it(it_node **it)
-{
-    it_node *itn;
-
-    while (*it)
-    {
-        itn = (*it)->next;
-        delete *it;
-        *it = itn;
-    }
-}
-
-static void add_intersection(it_node **it, gpc_edge_node *edge0,
+static void add_intersection(std::list<it_node> &it, gpc_edge_node *edge0,
                              gpc_edge_node *edge1, double x, double y)
 {
-    it_node *existing_node;
-
-    if (!*it)
+    if (it.empty())
     {
         // Append a new node to the tail of the list
-        MALLOC(*it, sizeof(it_node), "IT insertion", it_node);
-        (*it)->ie[0] = edge0;
-        (*it)->ie[1] = edge1;
-        (*it)->point.x = x;
-        (*it)->point.y = y;
-        (*it)->next = nullptr;
+        it.push_back(it_node(edge0, edge1, x, y));
+        return;
     }
-    else
+
+    for (auto iter = it.begin(); iter != it.end(); ++iter)
     {
-        if ((*it)->point.y > y)
+        if (iter->point.y > y)
         {
             // Insert a new node mid-list
-            existing_node = *it;
-            MALLOC(*it, sizeof(it_node), "IT insertion", it_node);
-            (*it)->ie[0] = edge0;
-            (*it)->ie[1] = edge1;
-            (*it)->point.x = x;
-            (*it)->point.y = y;
-            (*it)->next = existing_node;
+            it.insert(iter, it_node(edge0, edge1, x, y));
+            return;
         }
-        else
-            // Head further down the list
-            add_intersection(&((*it)->next), edge0, edge1, x, y);
     }
+
+    // Append a new node to the tail of the list
+    it.push_back(it_node(edge0, edge1, x, y));
+    return;
 }
 
-static void add_st_edge(st_node **st, it_node **it, gpc_edge_node *edge,
-                        double dy)
+static void add_st_edge(st_node **st, std::list<it_node> &it,
+                        gpc_edge_node *edge, double dy)
 {
     st_node *existing_node;
     double den, r, x, y;
@@ -64,7 +43,8 @@ static void add_st_edge(st_node **st, it_node **it, gpc_edge_node *edge,
     if (!*st)
     {
         // Append edge onto the tail end of the ST
-        MALLOC(*st, sizeof(st_node), "ST insertion", st_node);
+        *st = new st_node();
+
         (*st)->edge = edge;
         (*st)->xb = edge->xb();
         (*st)->xt = edge->xt();
@@ -81,7 +61,8 @@ static void add_st_edge(st_node **st, it_node **it, gpc_edge_node *edge,
         {
             // No intersection - insert edge here (before the ST edge)
             existing_node = *st;
-            MALLOC(*st, sizeof(st_node), "ST insertion", st_node);
+
+            *st = new st_node();
             (*st)->edge = edge;
             (*st)->xb = edge->xb();
             (*st)->xt = edge->xt();
@@ -104,14 +85,14 @@ static void add_st_edge(st_node **st, it_node **it, gpc_edge_node *edge,
     }
 }
 
-static void build_intersection_table(it_node **it,
+static void build_intersection_table(std::list<it_node> &it,
                                      std::list<gpc_edge_node> &aet, double dy)
 {
     st_node *st, *stp;
     gpc_edge_node *edge;
 
     // Build intersection table for the current scanbeam
-    reset_it(it);
+    it.clear();
     st = nullptr;
 
     // Process each AET edge

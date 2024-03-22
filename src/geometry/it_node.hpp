@@ -8,9 +8,16 @@ namespace gpc {
 class it_node
 {
 public:
-    gpc_edge_node *ie[2];    // Intersecting edge (bundle) pair
-    gpc_vertex point;        // Point of intersection
-    it_node *next = nullptr; // The next intersection table node
+    gpc_vertex point;     // Point of intersection
+    gpc_edge_node *ie[2]; // Intersecting edge (bundle) pair
+
+public:
+    it_node(gpc_edge_node *edge0, gpc_edge_node *edge1, double x, double y)
+        : point(x, y)
+    {
+        ie[0] = edge0;
+        ie[1] = edge1;
+    }
 };
 
 }; // namespace gpc

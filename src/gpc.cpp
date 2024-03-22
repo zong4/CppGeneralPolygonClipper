@@ -68,10 +68,6 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
     int parity[2] = {LEFT, LEFT};
     if (op == gpc_op::GPC_DIFF) parity[CLIP] = RIGHT;
 
-    // TODO:
-    it_node *it = nullptr, *intersect;
-    int in[2];
-
     polygon_node *cf = nullptr;
     std::vector<polygon_node *> out_poly;
 
@@ -173,8 +169,8 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
                 edge.bside[SUBJ] = parity[SUBJ];
 
                 // Determine contributing status and quadrant occupancies
-                int contributing = 0;
-                int bl = 0, br = 0, tl = 0, tr = 0;
+                bool contributing = 0;
+                bool bl = 0, br = 0, tl = 0, tr = 0;
                 switch (op)
                 {
                     case gpc_op::GPC_DIFF:
@@ -409,30 +405,33 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
         if (scanbeam < sbt.size())
         {
             // SCANBEAM INTERIOR PROCESSING
-            build_intersection_table(&it, aet.aet_list, dy);
+            std::list<it_node> it;
+            build_intersection_table(it, aet.aet_list, dy);
 
             // Process each node in the intersection table
-            for (intersect = it; intersect; intersect = intersect->next)
+            for (auto &&intersect : it)
             {
-                gpc_edge_node *e0 = intersect->ie[0];
-                gpc_edge_node *e1 = intersect->ie[1];
+                gpc_edge_node *e0 = intersect.ie[0];
+                gpc_edge_node *e1 = intersect.ie[1];
 
                 // Only generate output for contributing intersections
-                if ((e0->bundle[ABOVE][CLIP] || e0->bundle[ABOVE][SUBJ]) &&
-                    (e1->bundle[ABOVE][CLIP] || e1->bundle[ABOVE][SUBJ]))
+                if ((intersect.ie[0]->bundle[ABOVE][CLIP] ||
+                     e0->bundle[ABOVE][SUBJ]) &&
+                    (intersect.ie[1]->bundle[ABOVE][CLIP] ||
+                     intersect.ie[1]->bundle[ABOVE][SUBJ]))
                 {
                     polygon_node *p = e0->outp[ABOVE];
                     polygon_node *q = e1->outp[ABOVE];
 
-                    double ix = intersect->point.x;
-                    double iy = intersect->point.y + yb;
+                    double ix = intersect.point.x;
+                    double iy = intersect.point.y + yb;
 
+                    int in[2];
                     in[CLIP] =
                         (e0->bundle[ABOVE][CLIP] && !e0->bside[CLIP]) ||
                         (e1->bundle[ABOVE][CLIP] && e1->bside[CLIP]) ||
                         (!e0->bundle[ABOVE][CLIP] && !e1->bundle[ABOVE][CLIP] &&
                          e0->bside[CLIP] && e1->bside[CLIP]);
-
                     in[SUBJ] =
                         (e0->bundle[ABOVE][SUBJ] && !e0->bside[SUBJ]) ||
                         (e1->bundle[ABOVE][SUBJ] && e1->bside[SUBJ]) ||
@@ -595,7 +594,7 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
                 }
 
                 // Swap the edge bundles in the aet.aet_list.
-                swap_intersecting_edge_bundles(aet.aet_list, intersect);
+                swap_intersecting_edge_bundles(aet.aet_list, &intersect);
 
             } // End of IT loop
 
@@ -646,9 +645,6 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
             }
         }
     }
-
-    // Tidy up
-    reset_it(&it);
 }
 
 void gpc_tristrip_clip(gpc_op op, gpc_polygon *subj, gpc_polygon *clip,
