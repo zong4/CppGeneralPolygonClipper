@@ -5,7 +5,7 @@ gpc::gpc_polygon::gpc_polygon(
 {
     for (int i = 0; i < in_contour.size(); ++i)
     {
-        contour.push_back(gpc_vertex_list(in_contour[i]));
+        contours.push_back(gpc_vertex_list(in_contour[i]));
     }
 }
 
@@ -18,7 +18,7 @@ bool gpc::gpc_polygon::operator==(const gpc::gpc_polygon &rhs) const
 
     for (int i = 0; i < num_contours(); ++i)
     {
-        if (contour[i] != rhs.contour[i])
+        if (contours[i] != rhs.contours[i])
         {
             return false;
         }
@@ -54,7 +54,7 @@ std::ostream &gpc::operator<<(std::ostream &os, const gpc::gpc_polygon &polygon)
 
     for (int i = 0; i < polygon.num_contours(); ++i)
     {
-        os << polygon.contour[i];
+        os << polygon.contours[i];
     }
 
     // os << polygon.to_string();
@@ -64,7 +64,7 @@ std::ostream &gpc::operator<<(std::ostream &os, const gpc::gpc_polygon &polygon)
 
 void gpc::gpc_polygon::add_contour(const gpc_vertex_list &in_contour)
 {
-    contour.push_back(in_contour);
+    contours.push_back(in_contour);
 }
 
 std::string gpc::gpc_polygon::to_string() const
@@ -76,7 +76,7 @@ std::string gpc::gpc_polygon::to_string() const
     for (int i = 0; i < num_contours(); ++i)
     {
         ss << "contour " << i << ":\n";
-        ss << contour[i].to_string();
+        ss << contours[i].to_string();
     }
 
     return ss.str();
@@ -88,7 +88,7 @@ std::vector<gpc::gpc_bbox> gpc::gpc_polygon::create_contour_bboxes() const
 
     for (int i = 0; i < num_contours(); ++i)
     {
-        bboxes.push_back(contour[i].create_bbox());
+        bboxes.push_back(contours[i].create_bbox());
     }
 
     return bboxes;
@@ -116,7 +116,7 @@ void gpc::minimax_test_diff(const gpc::gpc_polygon &subj,
         if (!overlap)
         {
             // Flag non contributing status by negating vertex count
-            clip.contour[c].is_contributing = false;
+            clip.contours[c].is_contributing = false;
         }
     }
 }
@@ -144,7 +144,7 @@ void gpc::minimax_test_int(gpc::gpc_polygon &subj, gpc::gpc_polygon &clip)
 
         if (!overlap)
         {
-            clip.contour[c].is_contributing = false;
+            clip.contours[c].is_contributing = false;
         }
     }
 
@@ -152,7 +152,7 @@ void gpc::minimax_test_int(gpc::gpc_polygon &subj, gpc::gpc_polygon &clip)
     {
         if (!s_overlaps[s])
         {
-            subj.contour[s].is_contributing = false;
+            subj.contours[s].is_contributing = false;
         }
     }
 }
@@ -176,7 +176,7 @@ bool gpc::equal_sort(const gpc::gpc_polygon &subj, const gpc::gpc_polygon &clip)
 
     for (int i = 0; i < subj.num_contours(); ++i)
     {
-        std::vector<gpc_vertex> subj_vertex = subj.contour[i].vertexs;
+        std::vector<gpc_vertex> subj_vertex = subj.contours[i].vertexs;
         std::sort(subj_vertex.begin(), subj_vertex.end(),
                   [](const gpc_vertex &a, const gpc_vertex &b) {
                       if (a.x != b.x)
@@ -185,7 +185,7 @@ bool gpc::equal_sort(const gpc::gpc_polygon &subj, const gpc::gpc_polygon &clip)
                           return a.y < b.y;
                   });
 
-        std::vector<gpc_vertex> clip_vertex = clip.contour[i].vertexs;
+        std::vector<gpc_vertex> clip_vertex = clip.contours[i].vertexs;
         std::sort(clip_vertex.begin(), clip_vertex.end(),
                   [](const gpc_vertex &a, const gpc_vertex &b) {
                       if (a.x != b.x)

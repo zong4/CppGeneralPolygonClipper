@@ -1,7 +1,9 @@
 ﻿#pragma once
 
+#include <vector>
 #include "geometry/gpc_aet.hpp"
 #include "geometry/gpc_lmt.hpp"
+#include "geometry/gpc_polygon.hpp"
 #include "geometry/gpc_tristrip.hpp"
 #include "utilis/gpc_math.hpp"
 

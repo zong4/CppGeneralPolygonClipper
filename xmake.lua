@@ -1,13 +1,20 @@
-add_rules("mode.debug", "mode.release")
-
 set_languages("c++20")
-add_cxxflags("/EHsc")
-add_mxflags("-Wno-error=deprecated-declarations", "-fno-strict-aliasing", "-Wno-error=expansion-to-defined")
+add_cxxflags("/EHsc", "/Zc:__cplusplus")
+add_mxflags("-Wno-error=deprecated-declarations", "-fno-strict-aliasing", "-Wno-error=expansion-to-defined", "/Zc:__cplusplus")
 
 add_requires("gtest")
+add_requires("qt6core", "qt6gui", "qt6widgets")
+
+add_rules("mode.debug", "mode.release")
+if is_mode("debug") then
+    add_defines("DEBUG")
+elseif is_mode("release") then
+    add_defines("RELEASE")
+end
 
 target("cpp_gpc")
     add_packages("gtest")
+    add_packages("qt6core", "qt6gui", "qt6widgets")
 
     set_kind("binary")
     add_files("src/*.cpp")

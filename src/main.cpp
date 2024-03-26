@@ -1,3 +1,5 @@
+#ifdef DEBUG
+
 #include <gtest/gtest.h>
 #include <iostream>
 
@@ -9,11 +11,11 @@ int main(int argc, char **argv)
     gpc::gpc_polygon subject_polygon;
     gpc::gpc_polygon clip_polygon;
 
-    subject_polygon.add_contour(gpc::gpc_vertex_list(
-        {{0, 0}, {100, 0}, {100, 100}, {125, 125}, {-25, 125}, {0, 100}}));
+    subject_polygon.add_contour(
+        gpc::gpc_vertex_list({{0, 0}, {25, 25}, {0, 50}, {-25, 25}}));
 
     clip_polygon.add_contour(
-        gpc::gpc_vertex_list({{50, 50}, {150, 50}, {150, 150}, {50, 150}}));
+        gpc::gpc_vertex_list({{0, 25}, {25, 50}, {0, 75}, {-25, 50}}));
 
     gpc::gpc_polygon result_polygon;
     gpc::gpc_polygon_clip(gpc::gpc_op::GPC_DIFF, subject_polygon, clip_polygon,
@@ -35,3 +37,5 @@ int main(int argc, char **argv)
     testing::InitGoogleTest();
     return RUN_ALL_TESTS();
 }
+
+#endif

@@ -9,7 +9,7 @@ void gpc_polygon_clip(gpc_op op, gpc_polygon &subj, gpc_polygon &clip,
                       gpc_polygon &result)
 {
     // clear result
-    result.contour.clear();
+    result.contours.clear();
 
     if (subj.num_contours() == 0 && clip.num_contours() == 0)
     {

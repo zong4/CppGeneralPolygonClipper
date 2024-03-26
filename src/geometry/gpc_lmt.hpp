@@ -17,7 +17,7 @@ class gpc_lmt
 public:
     std::vector<double> sbtree;
     std::list<gpc_lmt_node> lmt_list;
-    std::vector<gpc_edge_node *> edge_tables; // TODO:
+    std::vector<gpc_edge_node *> edge_tables;
     // std::vector<std::vector<gpc_edge_node>> edge_tables;
 
 public:

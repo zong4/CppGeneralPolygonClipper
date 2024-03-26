@@ -28,7 +28,7 @@ void gpc::gpc_lmt::build_lmt(const gpc_polygon &p, bool type, gpc_op op)
 {
     for (int c = 0; c < p.num_contours(); ++c)
     {
-        if (!p.contour[c].is_contributing)
+        if (!p.contours[c].is_contributing)
         {
             continue;
         }
@@ -36,14 +36,14 @@ void gpc::gpc_lmt::build_lmt(const gpc_polygon &p, bool type, gpc_op op)
         std::vector<gpc_vertex> vertex_table;
 
         /* Perform contour optimisation */
-        for (int i = 0; i < p.contour[c].num_vertices(); ++i)
+        for (int i = 0; i < p.contours[c].num_vertices(); ++i)
         {
-            if (optimal(p.contour[c].vertexs, i, p.contour[c].num_vertices()))
+            if (optimal(p.contours[c].vertexs, i, p.contours[c].num_vertices()))
             {
-                vertex_table.push_back(p.contour[c].vertexs[i]);
+                vertex_table.push_back(p.contours[c].vertexs[i]);
 
                 /* Record vertex in the scanbeam table */
-                sbtree.push_back(p.contour[c].vertexs[i].y);
+                sbtree.push_back(p.contours[c].vertexs[i].y);
             }
         }
 

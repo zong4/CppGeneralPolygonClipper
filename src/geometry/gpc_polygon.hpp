@@ -11,18 +11,18 @@ namespace gpc {
 class gpc_polygon
 {
 public:
-    std::vector<gpc_vertex_list> contour; // Contour array pointer
+    std::vector<gpc_vertex_list> contours; // Contour array pointer
 
 public:
     gpc_polygon() = default;
     gpc_polygon(const std::vector<gpc_vertex_list> &in_contour)
-        : contour(in_contour)
+        : contours(in_contour)
     {
     }
     gpc_polygon(const std::vector<std::vector<gpc_vertex>> &in_contour);
     ~gpc_polygon() = default;
 
-    inline int num_contours() const { return contour.size(); }
+    inline int num_contours() const { return contours.size(); }
 
     bool operator==(const gpc_polygon &rhs) const;
 
