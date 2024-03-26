@@ -8,6 +8,7 @@
 #include <QKeyEvent>
 
 #include "gpc.hpp"
+#include "algorithm/extend.hpp"
 
 class PolygonWidget : public QWidget
 {
@@ -70,6 +71,10 @@ protected:
         {
             performBooleanOperation();
         }
+        else if (event->key() == Qt::Key_E)
+        {
+            result_polygon = extend(subj_polygon, 30);
+        }
 
         update();
     }
@@ -92,8 +97,6 @@ protected:
                     painter.drawLine(v1.x, v1.y, v2.x, v2.y);
                 }
             }
-
-            return;
         }
 
         if (points.num_vertices() > 0)

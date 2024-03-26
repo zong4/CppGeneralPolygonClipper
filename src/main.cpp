@@ -1,4 +1,4 @@
-#ifdef DEBUG
+#ifdef DEBUGs
 
 #include <gtest/gtest.h>
 #include <iostream>

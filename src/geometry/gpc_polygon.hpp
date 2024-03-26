@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "../utilis/gpc_enum.hpp"
+#include "../algorithm/intersect.hpp"
 #include "gpc_vertex_list.hpp"
 
 namespace gpc {

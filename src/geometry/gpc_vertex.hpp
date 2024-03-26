@@ -25,6 +25,40 @@ public:
     {
         return !(*this == rhs);
     }
+    inline gpc_vertex operator+(const gpc_vertex &rhs) const
+    {
+        return gpc_vertex(x + rhs.x, y + rhs.y);
+    }
+    inline gpc_vertex operator+=(const gpc_vertex &rhs)
+    {
+        x += rhs.x;
+        y += rhs.y;
+        return *this;
+    }
+    inline gpc_vertex operator-(const gpc_vertex &rhs) const
+    {
+        return gpc_vertex(x - rhs.x, y - rhs.y);
+    }
+    inline gpc_vertex operator-=(const gpc_vertex &rhs)
+    {
+        x -= rhs.x;
+        y -= rhs.y;
+        return *this;
+    }
+    inline gpc_vertex operator*(double scalar) const
+    {
+        return gpc_vertex(x * scalar, y * scalar);
+    }
+    inline gpc_vertex operator*=(double scalar)
+    {
+        x *= scalar;
+        y *= scalar;
+        return *this;
+    }
+    inline double operator*(const gpc_vertex &rhs) const
+    {
+        return x * rhs.x + y * rhs.y;
+    }
 
     friend std::istream &operator>>(std::istream &is, gpc_vertex &vertex)
     {
@@ -36,6 +70,39 @@ public:
     {
         os << vertex.x << " " << vertex.y;
         return os;
+    }
+
+    inline void rotate(double angle)
+    {
+        double x_new = x * std::cos(angle) - y * std::sin(angle);
+        double y_new = x * std::sin(angle) + y * std::cos(angle);
+        x = x_new;
+        y = y_new;
+    }
+
+    inline void rotate90()
+    {
+        double x_new = -y;
+        double y_new = x;
+        x = x_new;
+        y = y_new;
+    }
+
+    inline void rotate90_reverse()
+    {
+        double x_new = y;
+        double y_new = -x;
+        x = x_new;
+        y = y_new;
+    }
+
+    inline double norm() const { return std::sqrt(x * x + y * y); }
+
+    inline void normalize()
+    {
+        double length = norm();
+        x /= length;
+        y /= length;
     }
 
     std::string to_string() const

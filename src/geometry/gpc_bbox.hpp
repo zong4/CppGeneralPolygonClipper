@@ -12,6 +12,4 @@ public:
     double ymax = 0.0; // Maximum y coordinate
 };
 
-bool is_intersect(const gpc_bbox &a, const gpc_bbox &b);
-
 } // namespace gpc
