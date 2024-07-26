@@ -1,5 +1,7 @@
 # Cpp General Polygon Clipper
 
+## Introduce
+
 It translated from Generic Polygon Clipper. 
 
 We adjust outside interfaces so that it will be easier to comprehended and used.
