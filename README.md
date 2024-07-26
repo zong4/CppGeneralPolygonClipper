@@ -1,4 +1,8 @@
-# Cpp-General-Polygon-Clipper
+# Cpp General Polygon Clipper
+
+It translated from Generic Polygon Clipper. 
+
+We adjust outside interfaces so that it will be easier to comprehended and used.
 
 ===========================================================================
 
